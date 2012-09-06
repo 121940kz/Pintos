@@ -12,4 +12,5 @@ bochs-2.4.5/
 # Compiled Object files
 *.o
 *.d
-log-mega.txt
+log-mega.txt.
+
