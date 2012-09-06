@@ -13,4 +13,5 @@ bochs-2.4.5/
 *.o
 *.d
 log-mega.txt.
+log-mega.txt
 
