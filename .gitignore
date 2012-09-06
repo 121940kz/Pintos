@@ -8,3 +8,8 @@ proj0.tgz
 pintos/src/utilities/pintos-gdb 
 bochs-2.4.5.targ.gz
 bochs-2.4.5/
+
+# Compiled Object files
+*.o
+*.d
+log-mega.txt
