@@ -15,6 +15,28 @@
 #include "userprog/process.h"
 #endif
 
+// Preprocessing macros for debugging - Denise 
+//
+// __FILE__ = built in C macro for this file name
+// __LINE__ = built in C macro for this line of code
+
+// Format: 
+//     LOGD(__LINE__,"nameOfMyFunction", varname);
+//
+// Sample use:
+//     LOGD(__LINE__,"thread_init",thread_mlfqs);
+//
+// Use DEBUG 1 to turn on logging
+// Use DEBUG 0 to turn off logging
+//
+#define DEBUG  1  
+#if DEBUG
+  #define LOGD(n,f,x) printf("DEBUG=" __FILE__ "(%d): " #x " = %d\n", n,x)
+#else
+  #define LOGD(n,f,x) (void*)0
+#endif
+
+
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
@@ -88,6 +110,9 @@ void
 thread_init (void) 
 {
   ASSERT (intr_get_level () == INTR_OFF);
+
+  // Sample use of LOGD debugging macro - Denise
+  LOGD(__LINE__,"thread_init",thread_mlfqs);
 
   lock_init (&tid_lock);
   list_init (&ready_list);
