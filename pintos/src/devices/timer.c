@@ -7,6 +7,28 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+
+// Preprocessing macros for debugging - Denise 
+//
+// __FILE__ = built-in C macro giving string file name
+// __LINE__ = built-in C macro giving integer line of code
+
+// Format: 
+//     LOGD(__LINE__,"nameOfMyFunction", varname);
+//
+// Sample use:
+//     LOGD(__LINE__,"sleep",thread_mlfqs);
+//
+// Use DEBUG 1 to turn on logging
+// Use DEBUG 0 to turn off logging
+//
+#define DEBUG  1  
+#if DEBUG
+  #define LOGD(n,f,x) printf("DEBUG=" __FILE__ "(%d): " #x " = %d\n", n,x)
+#else
+  #define LOGD(n,f,x) (void*)0
+#endif
+
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -89,17 +111,44 @@ timer_elapsed (int64_t then)
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
+//*************************************************************************
+// Notes from class: Remove thread from ready list. 
+// Block with semaphore initialized to 0 associated with the thread.
+// After ticks, return thread to ready list.
+//*************************************************************************
 void
 timer_sleep (int64_t ticks) 
 {
   /*struct thread *t = thread_current();*/
      
+  // ----------------------------------------------------
+  // TODO:  This original code can be deleted once new stuff works
   int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
   while (timer_elapsed (start) < ticks) 
     thread_yield ();
+
+  // ---------------------------------------------------
+
+  // recommended in class:
+
+  //struct thread *t = thread_current ();
+
+  /* Schedule our wake-up time. */
+
+  // t->wakeup_time = …
+
+  /* Insert the current thread into the wait list. */
+
+  // intr_disable ();
+  //list_insert_ordered (&wait_list, &t->timer_list_elem,
+  //compare_threads_by_wakeup_time, NULL);
+  //intr_enable ();
+
+ /* Block this thread until timer expires. */
 }
+//*************************************************************************
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
    turned on. */
