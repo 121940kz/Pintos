@@ -15,8 +15,9 @@
 #include "userprog/process.h"
 #endif
 
+// =========================================================================
 // Preprocessing macros for debugging - Denise 
-//
+// =========================================================================
 // __FILE__ = built in C macro for this file name
 // __LINE__ = built in C macro for this line of code
 
@@ -35,7 +36,7 @@
 #else
   #define LOGD(n,f,x) (void*)0
 #endif
-
+// =========================================================================
 
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
@@ -112,9 +113,6 @@ thread_init (void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
 
-  // Sample use of LOGD debugging macro - Denise
-  LOGD(__LINE__,"thread_init",thread_mlfqs);
-
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
@@ -124,6 +122,17 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  // ==========================================================================
+  // additional init code added by our team
+  // ==========================================================================
+
+  // just taking a look
+  LOGD(__LINE__,"thread_init",initial_thread->tid);  
+
+
+
+  // ==========================================================================
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.

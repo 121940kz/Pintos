@@ -16,8 +16,9 @@
 // Format: 
 //     LOGD(__LINE__,"nameOfMyFunction", varname);
 //
-// Sample use:
-//     LOGD(__LINE__,"sleep",thread_mlfqs);
+// Sample uses:
+//     LOGD(__LINE__,"sleep",thread_mlfqs);  // prints a number in %d format
+//     LOGLINE();                            // prints an empty line 
 //
 // Use DEBUG 1 to turn on logging
 // Use DEBUG 0 to turn off logging
@@ -25,8 +26,10 @@
 #define DEBUG  1  
 #if DEBUG
   #define LOGD(n,f,x) printf("DEBUG=" __FILE__ "(%d): " #x " = %d\n", n,x)
+  #define LOGLINE() printf("\n")
 #else
   #define LOGD(n,f,x) (void*)0
+  #define LOGLINE() (void*)0
 #endif
 
   
@@ -119,10 +122,22 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-    
+  // TODO:  Assert the number of ticks to wait is greater than zero
+  //ASSERT (ticks > 0);
+
+  // Assert the waitlist has 0 or more elements
+  ASSERT (list_size(&wait_list) >= 0)
+
+  int64_t start = timer_ticks ();   // from original code - still good
+
+  // Debug code to see where we're at when we first arrive:
+
+  LOGLINE();                              // start with a blank debug line
+  LOGD(__LINE__,"timer_sleep",ticks);     // display number of ticks to wait
+  LOGD(__LINE__,"timer_sleep",start);     // display sleep starting time
+
   // ----------------------------------------------------
   // TODO:  This original code can be deleted once new stuff works
-  int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
   while (timer_elapsed (start) < ticks) 
@@ -134,33 +149,49 @@ timer_sleep (int64_t ticks)
 
   // create a pointer to a thread structure, t
   // and set it to the current thread
-  struct thread *t = thread_current ();
+
+  struct thread *t = thread_current ();  // given in class
+
+  // Just curious - what thread is our current thread?
+  LOGD(__LINE__,"timer_sleep",t->tid);   // display tid of the current thread
 
   /* Schedule our wake-up time. */
 
-  // we need to set the wakeup time field. Does the thread
+  // we need to set the wakeup_time field. Does the thread
   // structure already have one?  Doesn't look like it - we'll have 
   // to add one to the thread struct (in thread.h and thread.c).
-  // wakeup_time = current time + ticks to wait
-  //             = timer_ticks()  // Returns the number of timer ticks since the OS booted (see above)
-  //               + ticks // passed in to this function as an argument
-  // Let's see what they look like first (save this file, at cmd prompt type . qt.sh)
-  
-    LOGD(__LINE__,"timer_sleep",timer_ticks());
-    LOGD(__LINE__,"timer_sleep",ticks);
+  // wakeup_time = start + ticks to wait
+
+  t->wakeup_time = start + ticks;
+  LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display t->wakeup_time
 
 
-
-  // t->wakeup_time = timer_ticks() + ticks;
 
   /* Insert the current thread into the wait list. */
 
-  // intr_disable ();
-  //list_insert_ordered (&wait_list, &t->timer_list_elem,
-  //compare_threads_by_wakeup_time, NULL);
-  //intr_enable ();
+  //intr_disable ();   // given in class - disable interrupts 
+
+  // insert in order into the the wait_list  (as he told us in class)
+  // to use the call given in class below,  
+  // we can see that wait_list is declared above, 
+  // we need to make sure our thread structure has a timer_list_elem, and 
+  // we need the compare_threads_by_wakeup_time to exist and work correctly
+
+  // Just curious - how many items are already on the wait list?
+  LOGD(__LINE__,"timer_sleep",list_size(&wait_list));      
+
+  //list_insert_ordered (&wait_list, &t->timer_list_elem, compare_threads_by_wakeup_time, &t->wakeup_time);
+
+  //intr_enable ();    // given in class - enable interrupts 
+
+
 
  /* Block this thread until timer expires. */
+
+
+
+
+
 }
 //*************************************************************************
 

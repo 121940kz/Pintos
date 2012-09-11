@@ -93,6 +93,17 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
+   // =========================================================================
+   // additions to the thread struct by our coding team 
+   // =========================================================================
+
+   int64_t wakeup_time;                // wakeup_time = start + ticks to wait
+   struct list_elem timer_list_elem;   // needed in timer.c list_insert_ordered() function
+
+
+   // =========================================================================
+
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
