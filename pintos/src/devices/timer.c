@@ -119,8 +119,7 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  /*struct thread *t = thread_current();*/
-     
+    
   // ----------------------------------------------------
   // TODO:  This original code can be deleted once new stuff works
   int64_t start = timer_ticks ();
@@ -133,11 +132,26 @@ timer_sleep (int64_t ticks)
 
   // recommended in class:
 
-  //struct thread *t = thread_current ();
+  // create a pointer to a thread structure, t
+  // and set it to the current thread
+  struct thread *t = thread_current ();
 
   /* Schedule our wake-up time. */
 
-  // t->wakeup_time = …
+  // we need to set the wakeup time field. Does the thread
+  // structure already have one?  Doesn't look like it - we'll have 
+  // to add one to the thread struct (in thread.h and thread.c).
+  // wakeup_time = current time + ticks to wait
+  //             = timer_ticks()  // Returns the number of timer ticks since the OS booted (see above)
+  //               + ticks // passed in to this function as an argument
+  // Let's see what they look like first (save this file, at cmd prompt type . qt.sh)
+  
+    LOGD(__LINE__,"timer_sleep",timer_ticks());
+    LOGD(__LINE__,"timer_sleep",ticks);
+
+
+
+  // t->wakeup_time = timer_ticks() + ticks;
 
   /* Insert the current thread into the wait list. */
 
