@@ -8,8 +8,9 @@
 #include "threads/synch.h"
 #include "threads/thread.h"
 
-// Preprocessing macros for debugging - Denise 
-//
+// ===========================================================================
+// Preprocessing macros for debugging - added by our team
+// ===========================================================================
 // __FILE__ = built-in C macro giving string file name
 // __LINE__ = built-in C macro giving integer line of code
 
@@ -32,6 +33,7 @@
   #define LOGLINE() (void*)0
 #endif
 
+// ===========================================================================
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -56,6 +58,18 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
+
+// ===========================================================================
+// New function declaration - added by our team
+// ===========================================================================
+
+/* returns true if list element a < list element b according to aux, false otherwise */
+// TODO:  No idea how to declare this - total guess below.
+//list_less_func compare_threads_by_wakeup_time (const struct thread->list_elem *a,
+//                                               const struct thread->list_elem *b,
+//                                               void *aux);
+
+// ===========================================================================
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
@@ -114,11 +128,11 @@ timer_elapsed (int64_t then)
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
-//*************************************************************************
+// ===========================================================================
 // Notes from class: Remove thread from ready list. 
 // Block with semaphore initialized to 0 associated with the thread.
 // After ticks, return thread to ready list.
-//*************************************************************************
+// ===========================================================================
 void
 timer_sleep (int64_t ticks) 
 {
@@ -126,7 +140,7 @@ timer_sleep (int64_t ticks)
   //ASSERT (ticks > 0);
 
   // Assert the waitlist has 0 or more elements
-  ASSERT (list_size(&wait_list) >= 0)
+  ASSERT (list_size(&wait_list) >= 0)  
 
   int64_t start = timer_ticks ();   // from original code - still good
 
@@ -145,55 +159,67 @@ timer_sleep (int64_t ticks)
 
   // ---------------------------------------------------
 
-  // recommended in class:
-
-  // create a pointer to a thread structure, t
-  // and set it to the current thread
+  // create a pointer to a thread structure and set to the current thread
 
   struct thread *t = thread_current ();  // given in class
 
   // Just curious - what thread is our current thread?
   LOGD(__LINE__,"timer_sleep",t->tid);   // display tid of the current thread
 
-  /* Schedule our wake-up time. */
+  /* Schedule our wake-up time. */       // given in class
 
-  // we need to set the wakeup_time field. Does the thread
-  // structure already have one?  Doesn't look like it - we'll have 
-  // to add one to the thread struct (in thread.h and thread.c).
-  // wakeup_time = start + ticks to wait
+  // we need to set the wakeup_time field as given in class. 
+  // The thread structure didn't have one, so we added the field 
+  // to the thread struct in thread.h and thread.c.
+  // He said in class that wakeup_time = start + ticks to wait. 
 
   t->wakeup_time = start + ticks;
-  LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display t->wakeup_time
+  LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display it
 
-
-
-  /* Insert the current thread into the wait list. */
+  /* Insert the current thread into the wait list. */  //given in class
 
   //intr_disable ();   // given in class - disable interrupts 
 
   // insert in order into the the wait_list  (as he told us in class)
   // to use the call given in class below,  
   // we can see that wait_list is declared above, 
-  // we need to make sure our thread structure has a timer_list_elem, and 
-  // we need the compare_threads_by_wakeup_time to exist and work correctly
+  // But the thread structure didn't have a timer_list_elem, so we 
+  // added it in thread.c and thread.h and 
+  // we need the compare_threads_by_wakeup_time to exist and work correctly, 
+  // also, the last argument was not supplied, but it needs to hold the 
+  // value to be used for comparison (in our case, the wakeup_time).
 
   // Just curious - how many items are already on the wait list?
   LOGD(__LINE__,"timer_sleep",list_size(&wait_list));      
 
   //list_insert_ordered (&wait_list, &t->timer_list_elem, compare_threads_by_wakeup_time, &t->wakeup_time);
-
   //intr_enable ();    // given in class - enable interrupts 
-
-
 
  /* Block this thread until timer expires. */
 
-
+  // TODO: use the thread's semaphore to block....
 
 
 
 }
-//*************************************************************************
+
+// ===========================================================================
+  // TODO: Create a new private function compare_threads_by_wakeup_time. 
+  // If we look at list_insert_ordered in the list.h interface (look in lib/kernel), 
+  // we can see the format required.
+// ===========================================================================
+
+/* Compares the value of two list elements A and B, given
+   auxiliary data AUX.  Returns true if A is less than B, or
+   false if A is greater than or equal to B. */
+
+//list_less_func 
+//compare_threads_by_wakeup_time(struct thread->list_elem *a, struct thread->list_elem *b, void *aux)
+//{
+// NOT DECLARED OR IMPLEMENTED CORRECTLY
+//}
+// ===========================================================================
+
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
    turned on. */
