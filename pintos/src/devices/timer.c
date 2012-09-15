@@ -8,6 +8,7 @@
 #include "threads/synch.h"
 #include "threads/thread.h"
 
+
 // ===========================================================================
 // Preprocessing macros for debugging - added by our team
 // ===========================================================================
@@ -152,12 +153,12 @@ void
 timer_sleep (int64_t ticks) 
 {
   // TODO:  Assert the number of ticks to wait is greater than zero
-  //ASSERT (ticks > 0);
+  ASSERT (ticks > 0);
 
   // Assert the waitlist has 0 or more elements
-  ASSERT (list_size(&wait_list) >= 0)  
+ //   ASSERT (list_size(&wait_list) >= 0);  //SOMETHING IS WRONG HERE!!!
 
-  int64_t start = timer_ticks ();   // from original code - still good
+  int64_t start = timer_ticks ();//creates a new timer called start   // from original code - still good
 
   // Debug code to see where we're at when we first arrive:
 
@@ -168,9 +169,11 @@ timer_sleep (int64_t ticks)
   // ----------------------------------------------------
   // TODO:  This original code can be deleted once new stuff works
 
+/*
   ASSERT (intr_get_level () == INTR_ON);
   while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+   thread_yield ();
+*/
 
   // ---------------------------------------------------
 
@@ -181,40 +184,53 @@ timer_sleep (int64_t ticks)
   // Just curious - what thread is our current thread?
   LOGD(__LINE__,"timer_sleep",t->tid);   // display tid of the current thread
 
-  /* Schedule our wake-up time. */       // given in class
-
   // we need to set the wakeup_time field as given in class. 
   // The thread structure didn't have one, so we added the field 
   // to the thread struct in thread.h and thread.c.
   // He said in class that wakeup_time = start + ticks to wait. 
 
+  // Schedule our wake-up time. <---- given in class
   t->wakeup_time = start + ticks;
   LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display it
 
-  /* Insert the current thread into the wait list. */  //given in class
 
-  intr_disable ();   // given in class - disable interrupts 
+  intr_disable ();   // given in class - disable interrupts
 
   // insert in order into the the wait_list  (as he told us in class)
-  // to use the call given in class below,  
-  // we can see that wait_list is declared above, 
-  // But the thread structure didn't have a timer_list_elem, so we 
-  // added it in thread.c and thread.h and 
-  // we need the compare_threads_by_wakeup_time to exist and work correctly, 
-  // also, the last argument was not supplied, but it needs to hold the 
+  // to use the call given in class below,
+  // we can see that wait_list is declared above,
+  // But the thread structure didn't have a timer_list_elem, so we
+  // added it in thread.c and thread.h and
+  // we need the compare_threads_by_wakeup_time to exist and work correctly,
+  // also, the last argument was not supplied, but it needs to hold the
   // value to be used for comparison (in our case, the wakeup_time).
 
   // Just curious - how many items are already on the wait list?
-  LOGD(__LINE__,"timer_sleep",list_size(&wait_list));      
+  LOGD(__LINE__,"timer_sleep",list_size(&wait_list));
 
+  //Insert the current thread into the wait list. <--- from class
+ 
   list_insert_ordered (&wait_list, &t->timer_list_elem, compare_threads_by_wakeup_time, &t->wakeup_time);
   intr_enable ();    // given in class - enable interrupts 
-
+  sema_down(timer_semaphore); //Maybe
+  
  /* Block this thread until timer expires. */
 
   // TODO: use the thread's semaphore to block....
 
+  //Where do we need to do these things?
+  //block thread
+  //check items in list to see if timer has expired
+  //chuck items out of list
+  //release items semaphore
 
+  thread *s = wait_list.head;
+  if(s->wakeup_time > ticks)
+  {
+    sema_up(timer_semaphore);
+    wait_list.list_remove(&s);
+  }
+ 
 
 }
 
