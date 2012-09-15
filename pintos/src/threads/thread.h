@@ -4,6 +4,8 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "synch.h"  //added this line so that thread would know
+		   // what a semaphore was when we declare the timer_wait struct further down.
 
 /* States in a thread's life cycle. */
 enum thread_status
