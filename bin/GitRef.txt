@@ -1,0 +1,56 @@
+====================================================================
+GIT FAVORITES   (http://gitref.org/index.html)
+====================================================================
+get add -A                       // stages new, modified, and deleted              
+git commit -m "msg here"         // records a snapshot of staged
+git push git@github.com:OSTeam1/Pintos.git
+git pull git@github.com:OSTeam1/Pintos.git
+
+====================================================================
+MAKING A NEW BRANCH or SWITCHING TO IT
+====================================================================
+
+git branch    // shows branch
+git -a branch // shows all branches
+
+git branch project1    // creates a new branch first
+git checkout project1  // sets the active branch second
+git -b checkout denise // makes a branch and switches to it at same time
+  
+$ git checkout denise                         // now I can play, when done, I commit
+$ git commit -a -m "my message here"          // commit to my local repo
+$ git push git@github.com:OSTeam1/Pintos.git  //  push to github denise
+$ git checkout master                         // now I've got the old master code
+$ git merge denise                            // and I merge denise into the active (master) branch
+$ git push git@github.com:OSTeam1/Pintos.git  //  push to github (master)
+
+====================================================================
+OTHER STUFF
+====================================================================
+git show  CTRL-Z to exit  // View changes
+git status
+get add .    // stages only new and modified, without deleted            
+git add -u   // stages only modified and deleted, without new
+git reset // undoes last action (add ., add -u)
+
+====================================================================
+REFERENCES
+====================================================================
+http://git-scm.com/book/en/Git-Branching-Basic-Branching-and-Merging
+http://gitready.com/intermediate/2009/02/13/list-remote-branches.html
+http://gitref.org/creating/
+
+
+====================================================================
+AFTER INSTALL
+====================================================================
+# Sets the default email git uses on a commit
+git config --global user.email "dmcase@ksu.edu"
+
+cd <dir>
+git init  // to start a brand new git repo
+git clone git@github.com:OSTeam1/Pintos.git
+
+
+
+
