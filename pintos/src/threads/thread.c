@@ -14,7 +14,7 @@
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
-
+#include "devices/timer.h"
 // =========================================================================
 // Preprocessing macros for debugging - Denise 
 // =========================================================================
@@ -133,8 +133,8 @@ thread_init (void)
   //TODO: initialize our semaphore here lec7.pdf Semaphore Example: Mutual exc;
  // sema_init(timer_semaphore, 1);
 //  THIS IS NOT WORKING YET   START HERE
-  timer_semaphore->value = 1;
-  timer_semaphore->waiters = list.empty();
+  timer_semaphore.value = 1;
+  list_init(&timer_semaphore.waiters);
   
 
 

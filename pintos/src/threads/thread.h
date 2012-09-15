@@ -101,7 +101,7 @@ struct thread
 
    int64_t wakeup_time;                // wakeup_time = start + ticks to wait
    struct list_elem timer_list_elem;   // needed in timer.c list_insert_ordered() function
-   struct semaphore timer_semaphore;   // shared between threads
+   //struct semaphore timer_semaphore;   // shared between threads
 
    // =========================================================================
 
@@ -152,5 +152,6 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 struct list_elem timer_list_elem;
+struct semaphore timer_semaphore; //testing
 
 #endif /* threads/thread.h */
