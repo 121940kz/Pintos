@@ -132,9 +132,10 @@ thread_init (void)
 
   //TODO: initialize our semaphore here lec7.pdf Semaphore Example: Mutual exc;
  // sema_init(timer_semaphore, 1);
-//  THIS IS NOT WORKING YET   START HERE
+// This seems to be working now. 9/15/2012
   timer_semaphore.value = 1;
-  list_init(&timer_semaphore.waiters);
+  list_init(&timer_semaphore.waiters); //This is the pintos declaration to
+				      //create a list.
   
 
 
