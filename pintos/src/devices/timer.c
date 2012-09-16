@@ -61,18 +61,10 @@ static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
 // ===========================================================================
-// New function declaration - added by our team
+// New - added by our team
 // ===========================================================================
 
 bool compare_threads_by_wakeup_time(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED);
-
-// ===========================================================================
-
-// ===========================================================================
-  // TODO: Create a new private function compare_threads_by_wakeup_time. 
-  // If we look at list_insert_ordered in the list.h interface (look in lib/kernel), 
-  // we can see the format required.
-// ===========================================================================
 
 /* Compares the value of two list elements A and B, given
    auxiliary data AUX.  Returns true if A is less than B, or
@@ -152,86 +144,58 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  // TODO:  Assert the number of ticks to wait is greater than zero
+  // Assert the number of ticks to wait is greater than zero
   ASSERT (ticks > 0);
 
-  // Assert the waitlist has 0 or more elements
- //   ASSERT (list_size(&wait_list) >= 0);  //SOMETHING IS WRONG HERE!!!
+  // Assert interrupts are on
+  ASSERT (intr_get_level () == INTR_ON);
 
+  // get the number of ticks since the OS booted
   int64_t start = timer_ticks ();//creates a new timer called start   // from original code - still good
 
   // Debug code to see where we're at when we first arrive:
-
   LOGLINE();                              // start with a blank debug line
   LOGD(__LINE__,"timer_sleep",ticks);     // display number of ticks to wait
   LOGD(__LINE__,"timer_sleep",start);     // display sleep starting time
 
-  // ----------------------------------------------------
-  // TODO:  This original code can be deleted once new stuff works
-
-/*
-  ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-   thread_yield ();
-*/
-
-  // ---------------------------------------------------
-
   // create a pointer to a thread structure and set to the current thread
-
   struct thread *t = thread_current ();  // given in class
 
   // Just curious - what thread is our current thread?
   LOGD(__LINE__,"timer_sleep",t->tid);   // display tid of the current thread
 
-  // we need to set the wakeup_time field as given in class. 
-  // The thread structure didn't have one, so we added the field 
-  // to the thread struct in thread.h and thread.c.
-  // He said in class that wakeup_time = start + ticks to wait. 
-
   // Schedule our wake-up time. <---- given in class
   t->wakeup_time = start + ticks;
-  LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display it
 
+  // Debug wake time and number on wait list
+  LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display it
+  LOGD(__LINE__,"timer_sleep",list_size(&wait_list));
 
   intr_disable ();   // given in class - disable interrupts
 
-  // insert in order into the the wait_list  (as he told us in class)
-  // to use the call given in class below,
-  // we can see that wait_list is declared above,
-  // But the thread structure didn't have a timer_list_elem, so we
-  // added it in thread.c and thread.h and
-  // we need the compare_threads_by_wakeup_time to exist and work correctly,
-  // also, the last argument was not supplied, but it needs to hold the
-  // value to be used for comparison (in our case, the wakeup_time).
-
-  // Just curious - how many items are already on the wait list?
-  LOGD(__LINE__,"timer_sleep",list_size(&wait_list));
-
   //Insert the current thread into the wait list. <--- from class
- 
-  list_insert_ordered (&wait_list, &t->timer_list_elem, compare_threads_by_wakeup_time, &t->wakeup_time);
-  intr_enable ();    // given in class - enable interrupts 
-  sema_down(timer_semaphore); //Maybe
-  
- /* Block this thread until timer expires. */
+  list_insert_ordered (&wait_list, &t->timer_list_elem, compare_threads_by_wakeup_time, NULL);
 
+  // down the timer semaphore to block this thread until its wait time expires (pass by address)
+  sema_down(&t->timer_semaphore); 
+
+  // reenable interrupts
+  intr_enable ();    // given in class - enable interrupts 
+  
   // TODO: use the thread's semaphore to block....
 
-  //Where do we need to do these things?
+  //Where do we need to do these things?   That'll be coded in the thread code - D
   //block thread
   //check items in list to see if timer has expired
   //chuck items out of list
   //release items semaphore
 
-  thread *s = wait_list.head;
-  if(s->wakeup_time > ticks)
-  {
-    sema_up(timer_semaphore);
-    wait_list.list_remove(&s);
-  }
- 
-
+  //thread *s = wait_list.head;
+  // if(s->wakeup_time > ticks)
+  // {
+  //   sema_up(timer_semaphore);
+  //    wait_list.list_remove(&s);
+  // }
 }
 
 

@@ -101,10 +101,10 @@ struct thread
 
    int64_t wakeup_time;                // wakeup_time = start + ticks to wait
    struct list_elem timer_list_elem;   // needed in timer.c list_insert_ordered() function
-
+   struct semaphore timer_semaphore;   // add a timer semaphore to our thread struct
+                                       // has to be here in the thread struct
 
    // =========================================================================
-
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -150,9 +150,5 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
-
-struct list_elem timer_list_elem;
-struct semaphore timer_semaphore; //Moved the semaphore creation down here
-				 //so that it can be seen by all threads.
 
 #endif /* threads/thread.h */

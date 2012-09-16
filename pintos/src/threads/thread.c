@@ -122,25 +122,6 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-
-  // ==========================================================================
-  // additional init code added by our team
-  // ==========================================================================
-
-  // just taking a look
-  LOGD(__LINE__,"thread_init",initial_thread->tid);  
-
-  //TODO: initialize our semaphore here lec7.pdf Semaphore Example: Mutual exc;
- // sema_init(timer_semaphore, 1);
-// This seems to be working now. 9/15/2012
-  timer_semaphore.value = 1;
-  list_init(&timer_semaphore.waiters); //This is the pintos declaration to
-				      //create a list.
-  
-
-
-
-  // ==========================================================================
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -513,6 +494,22 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
+
+  // ==========================================================================
+  // added by our team  (moved to init_thread per Mitch's email)
+  // ==========================================================================
+
+  // Initialize our semaphore here lec7.pdf Semaphore Example: Mutual exc;
+     sema_init(&t->timer_semaphore, 1);    
+
+  // We can delete the 5 lines below - the sema_init works well; just needed the "&t->"
+  // It needs the address (&) of t->timer_semaphore so it can actually modify it
+  // This seems to be working now. 9/15/2012  
+  // timer_semaphore.value = 1;
+  // list_init(&timer_semaphore.waiters); //This is the pintos declaration to
+				      //create a list.
+
+  // ==========================================================================
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
