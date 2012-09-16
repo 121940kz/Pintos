@@ -184,11 +184,11 @@ timer_sleep (int64_t ticks)
   
   // TODO: use the thread's semaphore to block....
 
-  //Where do we need to do these things?   That'll be coded in the thread code - D
-  //block thread
-  //check items in list to see if timer has expired
-  //chuck items out of list
+ //We need to remove thread from the wait list in order to wake it up
+ t = list_pop_front(&wait_list); //Added  by Heath and Emily 9/16/2012
+  
   //release items semaphore
+  sema_up(&t->timer_semaphore); //Added by Heath and Emily 9/16/2012
 
   //thread *s = wait_list.head;
   // if(s->wakeup_time > ticks)
