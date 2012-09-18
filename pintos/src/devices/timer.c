@@ -25,9 +25,9 @@
 // Use DEBUG 1 to turn on logging
 // Use DEBUG 0 to turn off logging
 //
-#define DEBUG  1  
+#define DEBUG 1
 #if DEBUG
-  #define LOGD(n,f,x) printf("DEBUG=" __FILE__ "(%d): " #x " = %d\n", n,x)
+  #define LOGD(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " #x " = %d\n", n,x)
   #define LOGLINE() printf("\n")
 #else
   #define LOGD(n,f,x) (void*)0
@@ -77,7 +77,9 @@ compare_threads_by_wakeup_time(const struct list_elem *a_, const struct list_ele
 	const struct thread *b = list_entry(b_, struct thread, elem);
 	return a->wakeup_time < b->wakeup_time; 
 }
-// ===========================================================================
+  //=======================================================================
+  // end our modifications
+  //=======================================================================
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
@@ -137,15 +139,15 @@ timer_elapsed (int64_t then)
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 // ===========================================================================
-// Notes from class: Remove thread from ready list. 
-// Block with semaphore initialized to 0 associated with the thread.
-// After ticks, return thread to ready list.
+// timer_sleep has been updated by our team:
+// We remove thread from ready list by adding it to wait list.
+// And block the thread by downing semaphore initialized to 0.
 // ===========================================================================
 void
 timer_sleep (int64_t ticks) 
 {
-  // Assert the number of ticks to wait is greater than zero
-  ASSERT (ticks > 0);
+  // If parameter is invalid, exit gracefully
+  if (ticks < 1) { return;}
 
   // Assert interrupts are on
   ASSERT (intr_get_level () == INTR_ON);
@@ -167,14 +169,16 @@ timer_sleep (int64_t ticks)
   // Schedule our wake-up time. <---- given in class
   t->wakeup_time = start + ticks;
 
-  // Debug wake time and number on wait list
+  // Debug wake time 
   LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display it
-  LOGD(__LINE__,"timer_sleep",list_size(&wait_list));
 
   intr_disable ();   // given in class - disable interrupts
 
   //Insert the current thread into the wait list. <--- from class
   list_insert_ordered (&wait_list, &t->timer_list_elem, compare_threads_by_wakeup_time, NULL);
+
+  // Debug wait_list 
+  LOGD(__LINE__,"timer_sleep",list_size(&wait_list));
 
   // down the timer semaphore to block this thread until its wait time expires (pass by address)
   sema_down(&t->timer_semaphore); 
@@ -182,13 +186,13 @@ timer_sleep (int64_t ticks)
   // reenable interrupts
   intr_enable ();    // given in class - enable interrupts 
   
-  // TODO: use the thread's semaphore to block....
-
- //We need to remove thread from the wait list in order to wake it up
- t = list_pop_front(&wait_list); //Added  by Heath and Emily 9/16/2012
-  
+  //We need to remove thread from the wait list in order to wake it up
+  //   Yep - we need to check the wait list with each tick and see who 
+  //   needs to get woken up - see timer_interrupt. - Denise
+  //t = list_pop_front(&wait_list); //Added  by Heath and Emily 9/16/2012
+   
   //release items semaphore
-  sema_up(&t->timer_semaphore); //Added by Heath and Emily 9/16/2012
+  //sema_up(&t->timer_semaphore); //Added by Heath and Emily 9/16/2012
 
   //thread *s = wait_list.head;
   // if(s->wakeup_time > ticks)
@@ -196,6 +200,9 @@ timer_sleep (int64_t ticks)
   //   sema_up(timer_semaphore);
   //    wait_list.list_remove(&s);
   // }
+  //=======================================================================
+  // end our modifications
+  //=======================================================================
 }
 
 
@@ -273,6 +280,42 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
+  // ======================================================================
+  // This function occurs each tick.  
+  // Check the wait list and see who is ready to wake up.
+  // If ready, remove thread elements from the wake list. 
+  // Sample list iteration code from list.c ~line 139 
+  //=======================================================================
+
+  // get pointer to just before the first item in the list (the head)
+  struct list_elem *e = list_head (&wait_list);
+ 
+  // move to next elem and while there's still an elem left
+  while ((e = list_next (e)) != list_end (&wait_list)) {
+
+     // get a pointer to this item item itself (see list.c ~line128)
+     struct thread *t = list_entry(e, struct thread, timer_list_elem);
+     
+     // if the wakeup time is before now
+     if (&t->wakeup_time <= timer_ticks()){
+
+        // display
+        LOGD(__LINE__,"timer_interrupt",t->wakeup_time); 
+
+        // remove the elem from the wait list (see list.c ~line 222 comments)
+        struct list_elem *n = list_remove(e);     
+
+        // up the thread's timer semaphore  
+        sema_up(&t->timer_semaphore);
+ 
+        // display
+        LOGD(__LINE__,"timer_interrupt",t->tid); 
+     }
+  }
+  //=======================================================================
+  // end our modifications
+  //=======================================================================
+
   ticks++;
   thread_tick ();
 }
