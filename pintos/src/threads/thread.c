@@ -15,29 +15,34 @@
 #include "userprog/process.h"
 #endif
 #include "devices/timer.h"
-// =========================================================================
-// Preprocessing macros for debugging - Denise 
-// =========================================================================
-// __FILE__ = built in C macro for this file name
-// __LINE__ = built in C macro for this line of code
+
+// ===========================================================================
+// Preprocessing macros for debugging - added by our team
+// ===========================================================================
+// __FILE__ = built-in C macro giving string file name
+// __LINE__ = built-in C macro giving integer line of code
 
 // Format: 
 //     LOGD(__LINE__,"nameOfMyFunction", varname);
 //
-// Sample use:
-//     LOGD(__LINE__,"thread_init",thread_mlfqs);
+// Sample uses:
+//     LOGD(__LINE__,"sleep",thread_mlfqs);  // prints a number in %d format
+//     LOGLINE();                            // prints an empty line 
 //
 // Use DEBUG 1 to turn on logging
 // Use DEBUG 0 to turn off logging
 //
-#define DEBUG  1  
+#define DEBUG 1
 #if DEBUG
-  #define LOGD(n,f,x) printf("DEBUG=" __FILE__ "(%d): " #x " = %d\n", n,x)
+  #define LOGD(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " #x " = %d\n", n,x)
+  #define LOGLINE() printf("\n")
 #else
   #define LOGD(n,f,x) (void*)0
+  #define LOGLINE() (void*)0
 #endif
-// =========================================================================
 
+// ===========================================================================
+  
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
@@ -111,34 +116,50 @@ static tid_t allocate_tid (void);
 void
 thread_init (void) 
 {
+
   ASSERT (intr_get_level () == INTR_OFF);
+
+  LOGD(__LINE__,"thread_init",0);  
 
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+
+  LOGD(__LINE__,"thread_init",list_size(&ready_list));  
+  LOGD(__LINE__,"thread_init",list_size(&all_list));  
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  LOGD(__LINE__,"thread_init", initial_thread->tid);  
+  thread_print_stats();
+
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
    Also creates the idle thread. */
 void
-thread_start (void) 
+thread_start (void)                                          // THREAD START ===============
 {
+  LOGD(__LINE__,"thread_start", 0);  //code location 0
+
   /* Create the idle thread. */
   struct semaphore idle_started;
   sema_init (&idle_started, 0);
   thread_create ("idle", PRI_MIN, idle, &idle_started);
+
+  LOGD(__LINE__,"thread_start", 1); //code location 1
 
   /* Start preemptive thread scheduling. */
   intr_enable ();
 
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
+
+  LOGD(__LINE__,"thread_start", 2);  //code location 2 - never reaches here??
 }
 
 /* Called by the timer interrupt handler at each timer tick.
@@ -188,7 +209,7 @@ thread_print_stats (void)
    Priority scheduling is the goal of Problem 1-3. */
 tid_t
 thread_create (const char *name, int priority,
-               thread_func *function, void *aux) 
+               thread_func *function, void *aux)           // THREAD CREATE ===============
 {
   struct thread *t;
   struct kernel_thread_frame *kf;
@@ -198,6 +219,8 @@ thread_create (const char *name, int priority,
   enum intr_level old_level;
 
   ASSERT (function != NULL);
+                      
+   LOGD(__LINE__,"thread_create",priority);  
 
   /* Allocate thread. */
   t = palloc_get_page (PAL_ZERO);
@@ -207,6 +230,8 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+
+  LOGD(__LINE__,"thread_create",tid);  
 
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
@@ -249,6 +274,10 @@ thread_block (void)
   ASSERT (intr_get_level () == INTR_OFF);
 
   thread_current ()->status = THREAD_BLOCKED;
+
+   LOGLINE();                         
+   LOGD(__LINE__,"thread_block",thread_current()->tid);  
+
   schedule ();
 }
 
@@ -272,6 +301,10 @@ thread_unblock (struct thread *t)
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
+
+  LOGD(__LINE__,"thread_unblock",t->tid);  
+  LOGLINE();
+
 }
 
 /* Returns the name of the running thread. */
@@ -420,6 +453,8 @@ thread_get_recent_cpu (void)
 static void
 idle (void *idle_started_ UNUSED) 
 {
+
+  LOGD(__LINE__,"idle", 0);
   struct semaphore *idle_started = idle_started_;
   idle_thread = thread_current ();
   sema_up (idle_started);
@@ -481,7 +516,7 @@ is_thread (struct thread *t)
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
-init_thread (struct thread *t, const char *name, int priority)
+init_thread (struct thread *t, const char *name, int priority)            // INIT THIS BLOCKED THREAD ===============
 {
   ASSERT (t != NULL);
   ASSERT (PRI_MIN <= priority && priority <= PRI_MAX);
@@ -500,7 +535,10 @@ init_thread (struct thread *t, const char *name, int priority)
   // ==========================================================================
 
   // Initialize our semaphore here lec7.pdf Semaphore Example: Mutual exc;
-     sema_init(&t->timer_semaphore, 1);    
+     sema_init(&t->timer_semaphore, 1);   
+
+     LOGD(__LINE__,"init_thread", list_size(&all_list));
+     LOGD(__LINE__,"init_thread", list_size(&ready_list));
 
   // We can delete the 5 lines below - the sema_init works well; just needed the "&t->"
   // It needs the address (&) of t->timer_semaphore so it can actually modify it
@@ -533,6 +571,8 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void) 
 {
+  LOGD(__LINE__,"next_thread_to_run", list_size(&ready_list));
+
   if (list_empty (&ready_list))
     return idle_thread;
   else
@@ -595,6 +635,9 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
+
+  LOGD(__LINE__,"schedule", list_size(&ready_list));
+
   struct thread *cur = running_thread ();
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
@@ -618,6 +661,8 @@ allocate_tid (void)
   lock_acquire (&tid_lock);
   tid = next_tid++;
   lock_release (&tid_lock);
+
+  LOGD(__LINE__,"allocate_tid", tid);
 
   return tid;
 }
