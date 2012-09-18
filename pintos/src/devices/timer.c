@@ -177,7 +177,6 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
 
   // disable interrupts 
-  intr_disable ();   // given in class - disable interrupts
 
  // get the current time
   int64_t start = timer_ticks ();//creates a new timer called start   // from original code - still good
@@ -199,11 +198,19 @@ timer_sleep (int64_t ticks)
   // Debug wake time 
   LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display it
 
+
+  intr_disable ();   // given in class - disable interrupts
+
   //Insert the current thread into the wait list. <--- from class
   list_insert_ordered (&wait_list, &t->elem, compare_threads_by_wakeup_time, NULL);
 
+
+  intr_enable ();    // given in class - enable interrupts 
+
+  
   // Debug wait_list 
   LOGD(__LINE__,"timer_sleep",list_size(&wait_list));
+  
 
   // down the timer semaphore to block this thread until its wait time expires (pass by address)
   sema_down(&t->timer_semaphore); 
@@ -213,7 +220,6 @@ timer_sleep (int64_t ticks)
   //}
 
   // reenable interrupts
-  intr_enable ();    // given in class - enable interrupts 
   
   //We need to remove thread from the wait list in order to wake it up
   //   Yep - we need to check the wait list with each tick and see who 
