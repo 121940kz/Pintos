@@ -1,10 +1,12 @@
 ====================================================================
 GIT FAVORITES   (http://gitref.org/index.html)
 ====================================================================
-git add -A                       // stages new, modified, and deleted              
+git add -A                       // stages new, modified, and deleted  
+git status            
 git commit -m "msg here"         // records a snapshot of staged
-git push git@github.com:OSTeam1/Pintos.git
-git pull git@github.com:OSTeam1/Pintos.git
+git push                         // git@github.com:OSTeam1/Pintos.git
+
+git pull
 
 ====================================================================
 MAKING A NEW BRANCH or SWITCHING TO IT
