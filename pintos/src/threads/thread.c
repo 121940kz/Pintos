@@ -33,7 +33,7 @@
 // Use DEBUG 1 to turn on logging
 // Use DEBUG 0 to turn off logging
 //
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
   #define LOGD(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " #x " = %d\n", n,x)
   #define LOGS(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " x "\n", n,x)
@@ -227,7 +227,7 @@ thread_create (const char *name, int priority,
 
   ASSERT (function != NULL);
                       
-   LOGD(__LINE__,"thread_create",priority);  
+  LOGD(__LINE__,"thread_create",priority);  
 
   /* Allocate thread. */
   t = palloc_get_page (PAL_ZERO);

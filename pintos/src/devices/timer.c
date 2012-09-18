@@ -169,17 +169,19 @@ timer_sleep (int64_t ticks)
  // while (timer_elapsed (start) < ticks) 
  //   thread_yield ();
  // return;
-
-  // get the current time
-  int64_t start = timer_ticks ();//creates a new timer called start   // from original code - still good
-
+ 
   // If parameter is invalid, exit gracefully
   if (ticks < 1) { return;}
 
   // Assert interrupts are on when we enter
   ASSERT (intr_get_level () == INTR_ON);
 
- 
+  // disable interrupts 
+  intr_disable ();   // given in class - disable interrupts
+
+ // get the current time
+  int64_t start = timer_ticks ();//creates a new timer called start   // from original code - still good
+
   // Debug code to see where we're at when we first arrive:
   LOGLINE();                              // start with a blank debug line
   LOGD(__LINE__,"timer_sleep",ticks);     // display number of ticks to wait
@@ -196,9 +198,6 @@ timer_sleep (int64_t ticks)
 
   // Debug wake time 
   LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display it
-
- // disable interrupts 
-  intr_disable ();   // given in class - disable interrupts
 
   //Insert the current thread into the wait list. <--- from class
   list_insert_ordered (&wait_list, &t->elem, compare_threads_by_wakeup_time, NULL);
