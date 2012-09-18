@@ -25,7 +25,7 @@
 // Use DEBUG 1 to turn on logging
 // Use DEBUG 0 to turn off logging
 //
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
   #define LOGD(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " #x " = %d\n", n,x)
   #define LOGS(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " x "\n", n,x)
@@ -176,8 +176,6 @@ timer_sleep (int64_t ticks)
   // Assert interrupts are on when we enter
   ASSERT (intr_get_level () == INTR_ON);
 
-  // disable interrupts 
-
  // get the current time
   int64_t start = timer_ticks ();//creates a new timer called start   // from original code - still good
 
@@ -198,20 +196,18 @@ timer_sleep (int64_t ticks)
   // Debug wake time 
   LOGD(__LINE__,"timer_sleep",t->wakeup_time);       // display it
 
-
+  // disable interrupts 
   intr_disable ();   // given in class - disable interrupts
 
   //Insert the current thread into the wait list. <--- from class
   list_insert_ordered (&wait_list, &t->elem, compare_threads_by_wakeup_time, NULL);
 
-
+  // reenable interrupts
   intr_enable ();    // given in class - enable interrupts 
 
-  
-  // Debug wait_list 
+   // Debug wait_list 
   LOGD(__LINE__,"timer_sleep",list_size(&wait_list));
   
-
   // down the timer semaphore to block this thread until its wait time expires (pass by address)
   sema_down(&t->timer_semaphore); 
   
@@ -219,7 +215,7 @@ timer_sleep (int64_t ticks)
   //   sema_up(&t->timer_semaphore);
   //}
 
-  // reenable interrupts
+
   
   //We need to remove thread from the wait list in order to wake it up
   //   Yep - we need to check the wait list with each tick and see who 
@@ -332,7 +328,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
   
       // while we're not at the end and it's past our wakeup time
       while ((e != list_end(&wait_list)) && (t->wakeup_time <= timer_ticks())) {
-
 
          // up the thread's timer semaphore  
          sema_up(&t->timer_semaphore);
