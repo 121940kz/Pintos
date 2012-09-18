@@ -19,6 +19,7 @@
 //
 // Sample uses:
 //     LOGD(__LINE__,"sleep",thread_mlfqs);  // prints a number in %d format
+//     LOGS(__LINE__,"sleep","your msg");    // prints any string
 //     LOGLINE();                            // prints an empty line 
 //
 // Use DEBUG 1 to turn on logging
@@ -27,9 +28,11 @@
 #define DEBUG 1
 #if DEBUG
   #define LOGD(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " #x " = %d\n", n,x)
+  #define LOGS(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " x "\n", n,x)
   #define LOGLINE() printf("\n")
 #else
   #define LOGD(n,f,x) (void*)0
+  #define LOGS(n,f,x) (void*)0
   #define LOGLINE() (void*)0
 #endif
 
@@ -92,10 +95,15 @@ compare_threads_by_wakeup_time(const struct list_elem *a_, const struct list_ele
 void
 timer_init (void) 
 {
+  LOGLINE();
+  LOGS(__LINE__,"timer_init","starting timer init");  
+
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
   list_init(&wait_list);
   LOGD(__LINE__,"timer_init",list_size(&wait_list));
+  LOGS(__LINE__,"timer_init","done with timer init");  
+  LOGLINE();
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */

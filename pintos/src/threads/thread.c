@@ -27,6 +27,7 @@
 //
 // Sample uses:
 //     LOGD(__LINE__,"sleep",thread_mlfqs);  // prints a number in %d format
+//     LOGS(__LINE__,"sleep","your msg");    // prints any string
 //     LOGLINE();                            // prints an empty line 
 //
 // Use DEBUG 1 to turn on logging
@@ -35,9 +36,11 @@
 #define DEBUG 1
 #if DEBUG
   #define LOGD(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " #x " = %d\n", n,x)
+  #define LOGS(n,f,x) printf("DEBUG=" __FILE__ " " f "(%d): " x "\n", n,x)
   #define LOGLINE() printf("\n")
 #else
   #define LOGD(n,f,x) (void*)0
+  #define LOGS(n,f,x) (void*)0
   #define LOGLINE() (void*)0
 #endif
 
@@ -119,7 +122,8 @@ thread_init (void)
 
   ASSERT (intr_get_level () == INTR_OFF);
 
-  LOGD(__LINE__,"thread_init",0);  
+  LOGLINE();
+  LOGS(__LINE__,"thread_init","init main system thread");  
 
   lock_init (&tid_lock);
   list_init (&ready_list);
@@ -135,6 +139,8 @@ thread_init (void)
   initial_thread->tid = allocate_tid ();
 
   LOGD(__LINE__,"thread_init", initial_thread->tid);  
+  LOGS(__LINE__,"thread_init","done init main system thread");  
+  LOGLINE();
   thread_print_stats();
 
 }
@@ -144,14 +150,15 @@ thread_init (void)
 void
 thread_start (void)                                          // THREAD START ===============
 {
-  LOGD(__LINE__,"thread_start", 0);  //code location 0
+  LOGS(__LINE__,"thread_start", "start scheduling" );  
 
   /* Create the idle thread. */
   struct semaphore idle_started;
   sema_init (&idle_started, 0);
-  thread_create ("idle", PRI_MIN, idle, &idle_started);
 
-  LOGD(__LINE__,"thread_start", 1); //code location 1
+  LOGS(__LINE__,"thread_start", "start create idle thread" );  
+  thread_create ("idle", PRI_MIN, idle, &idle_started);
+  LOGS(__LINE__,"thread_start", "done creating idle thread"); 
 
   /* Start preemptive thread scheduling. */
   intr_enable ();
@@ -159,7 +166,7 @@ thread_start (void)                                          // THREAD START ===
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
 
-  LOGD(__LINE__,"thread_start", 2);  //code location 2 - never reaches here??
+  LOGS(__LINE__,"thread_start", "done starting scheduling");  
 }
 
 /* Called by the timer interrupt handler at each timer tick.
@@ -274,9 +281,7 @@ thread_block (void)
   ASSERT (intr_get_level () == INTR_OFF);
 
   thread_current ()->status = THREAD_BLOCKED;
-
-   LOGLINE();                         
-   LOGD(__LINE__,"thread_block",thread_current()->tid);  
+  LOGD(__LINE__,"thread_block",thread_current()->tid);  
 
   schedule ();
 }
