@@ -4,6 +4,8 @@
 #include <round.h>
 #include <stdint.h>
 
+//#include <~/threads/synch.h> //included to hopefully make semaphores in timer work
+
 /* Number of timer interrupts per second. */
 #define TIMER_FREQ 100
 

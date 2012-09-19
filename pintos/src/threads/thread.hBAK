@@ -99,9 +99,10 @@ struct thread
    // additions to the thread struct by our coding team 
    // =========================================================================
 
-   int64_t wakeup_time;                // Thread wakeup time. 
-   struct list_elem timer_list_elem;   // List element for timer wait list.
-   struct semaphore timer_semaphore;   // Timer wait semaphore
+   int64_t wakeup_time;                // wakeup_time = start + ticks to wait
+   struct list_elem timer_list_elem;   // needed in timer.c list_insert_ordered() function
+   struct semaphore timer_semaphore;   // add a timer semaphore to our thread struct
+                                       // has to be here in the thread struct
 
    // =========================================================================
 
