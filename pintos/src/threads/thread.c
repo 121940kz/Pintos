@@ -128,6 +128,9 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  printf("intial thread init with tid of %d", initial_thread->tid);        ///////////////////////////
+
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -499,7 +502,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-  sema_init(&t->timer_semaphore,0);          // initialize wait timer semaphore
+  sema_init(&t->timer_semaphore,0);          // initialize wait timer semaphore to 0
   list_push_back (&all_list, &t->allelem);
 }
 

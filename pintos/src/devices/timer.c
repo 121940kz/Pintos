@@ -142,24 +142,18 @@ void
 timer_sleep (int64_t ticks)             
 {
   // ===========================================================================
-  // Modified by our team
+  // Modified by our team - working version 9/19/12
   // ===========================================================================
 
   ASSERT (intr_get_level () == INTR_ON);  // ASSERTS first
  
-  //int64_t start = timer_ticks ();       // orig
-  //while (timer_elapsed (start) < ticks) // orig
-  //  thread_yield ();                    // orig
- 
-  struct thread *t = thread_current();       // get pointer to current thread 
-  t->wakeup_time =  ticks + timer_ticks();   // set current thread wake time
+  struct thread *t = thread_current();        // get pointer to current thread 
+  t->wakeup_time =  ticks + timer_ticks();    // set current thread wake time
 
-  printf ("%d threads waiting\n", list_size(&wait_list));
-  printf ("tid %d added with waketime %d \n", t->tid, t->wakeup_time);
-  intr_disable();                         // disable interrupts only for shared list mods
+  intr_disable();                             // disable interrupts only for shared list mods
   list_insert_ordered(&wait_list, &t->timer_list_elem, compare_threads_by_wakeup_time, &t->wakeup_time);
-  intr_enable();                          // re-enable interrupts
-  sema_down(&t->timer_semaphore);         // down the semaphore to block the thread while waiting
+  intr_enable();                              // re-enable interrupts
+  sema_down(&t->timer_semaphore);              // down the semaphore to block the thread while waiting
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -241,6 +235,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
   // Check the wait list and see who is ready to wake up.
   // If ready, remove thread elements from the wake list. 
   // Sample list iteration code from list.c ~line 139 
+  // Added - Denise - 9/19/12 alarm neg, 0, 1, multiple, many, & mega pass  
   //=======================================================================
 
   // get pointer to first item in the list (the beginning)
@@ -251,19 +246,17 @@ timer_interrupt (struct intr_frame *args UNUSED)
   
   // while we're not at the end and it's past our wakeup time
   while ((e != list_end(&wait_list)) && (t->wakeup_time <= timer_ticks () )) {
+
+    // release the blocking with the wait timer semaphore
+     sema_up(&t->timer_semaphore);
  
      // remove the elem from the wait list (see list.c ~line 222 comments)
      // and advance pointer to next list item 
      e = list_remove(e);   
 
-     printf ("tid %d removed with waketime %d \n", t->tid, t->wakeup_time); 
-     printf ("only %d threads waiting\n", list_size(&wait_list));
-
      // update our thread pointer to this next item's thread
      t = list_entry(e, struct thread, timer_list_elem);  
-    
-     //sema_up(&t->timer_semaphore);
-  }
+ }
   ticks++;
   thread_tick ();
 }
