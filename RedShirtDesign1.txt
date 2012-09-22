@@ -18,6 +18,10 @@ Denise Case <denisecase@gmail.com>
 >> preparing your submission, other than the Pintos documentation,
 >> course text, lecture notes, and course staff.
 
+Bryant & O'Hallaron, Computer Systems: A Programmer's Perspective.
+Kernighan & Ritchie, The C Programming Language, Second Edition. 
+Love, et al, Beginning Unix.
+Petzold, Code: The Hidden Langauge of Computer Hardware and Software.
 
 
                  ALARM CLOCK
@@ -30,13 +34,36 @@ Denise Case <denisecase@gmail.com>
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
 
+static struct list wait_list; 
+The wait_list maintains a list of all threads waiting, sorted by the 
+thread's wakeup time.
+
+struct lock wait_list_lock;  
+The wait_list_lock is used to protect wait_list access, so that only
+one thread can be updating the list at any time.
+
+
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to your timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
+We get a pointer to the current thread and set the current thread's 
+wakeup time to the current time plus the ticks passed in. We aquire 
+a lock, disable interrupts, insert the thread into a wait list 
+ordered by wakeup time, re-enable interrupts, release the lock, 
+and down the wait semaphore on the current thread, blocking it 
+until the timer interrupt handler unblocks it (after the required 
+delay has passed).
+
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
+
+To minimize the amount of time spent in the timer interrupt handler, 
+the wait list is maintained in sorted order.  If the wait list is 
+empty or the first element is not due to be woken, the timer interrupt 
+immediately moves to incrementing the time and calling the thread_tick 
+function.
 
 
 ---- SYNCHRONIZATION ----
@@ -44,9 +71,20 @@ Denise Case <denisecase@gmail.com>
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
+Race conditions are avoided when multiple threads call timer_sleep() 
+simultaneously by aquiring a lock before the critical section of the 
+code. Only one thread will be allowed in the critical section (disable 
+interrupts, insert into list, re-enable interrupts) at a time.  Any 
+other threads will have to wait until the lock is released before they 
+can access the critical section. 
+
 
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
+
+Race conditions are avoided when a timer interrupt occurs by disabling 
+interrupts immediately before insertion into the shared wait_list and 
+re-enabling interrupts again immediately after the list is updated.
 
 
 ---- RATIONALE ----
