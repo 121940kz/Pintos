@@ -92,6 +92,10 @@ re-enabling interrupts again immediately after the list is updated.
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> other designs that you considered?
 
+Our first design didn't support simultaneous wakeups.  Our current 
+design is superior in that it supports simulanteous wakeups by acquiring 
+a lock before looping through all threads that are elegible for waking 
+at the given system time. 
 
 
              PRIORITY SCHEDULING
