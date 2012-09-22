@@ -47,9 +47,17 @@
 #error TIMER_FREQ <= 1000 recommended
 #endif
 
-// ADDED: the timer keeps a list of threads waiting.....................
+// ===========================================================================
+// New - added by our team
+// ===========================================================================
 
+// list of threads waiting, sorted by the thread's wakeup time
 static struct list wait_list;  
+
+// lock to protect wait list access
+ struct lock wait_list_lock;   
+
+
 
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
@@ -88,7 +96,12 @@ timer_init (void)
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 
+// ===========================================================================
+// New - added by our team
+// ===========================================================================
+
   list_init (&wait_list);                    // initialize the wait list
+  lock_init (&wait_list_lock);               // initialize the wait list lock
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -142,17 +155,21 @@ void
 timer_sleep (int64_t ticks)             
 {
   // ===========================================================================
-  // Modified by our team - working version 9/19/12
+  // Modified by our team - working version 9/19/12, added lock 9/22
   // ===========================================================================
 
   ASSERT (intr_get_level () == INTR_ON);  // ASSERTS first
+  if (ticks <= 0) {return;}               // if tick parameter is invalid, return
  
   struct thread *t = thread_current();        // get pointer to current thread 
   t->wakeup_time =  ticks + timer_ticks();    // set current thread wake time
 
+  lock_acquire (&wait_list_lock);             // aquire lock before critical section
   intr_disable();                             // disable interrupts only for shared list mods
   list_insert_ordered(&wait_list, &t->timer_list_elem, compare_threads_by_wakeup_time, &t->wakeup_time);
   intr_enable();                              // re-enable interrupts
+  lock_release (&wait_list_lock);             // release lock after critical section
+
   sema_down(&t->timer_semaphore);              // down the semaphore to block the thread while waiting
 }
 
@@ -243,16 +260,19 @@ timer_interrupt (struct intr_frame *args UNUSED)
  
   // get a pointer to the first item itself (see list.c ~line128)
   struct thread *t = list_entry(e, struct thread, timer_list_elem);
+
+  // get system time just once
+  int64_t now = timer_ticks ();
   
   // while we're not at the end and it's past our wakeup time
-  while ((e != list_end(&wait_list)) && (t->wakeup_time <= timer_ticks () )) {
+  while ((e != list_end(&wait_list)) && (t->wakeup_time <= now )) {
 
     // release the blocking with the wait timer semaphore
      sema_up(&t->timer_semaphore);
  
      // remove the elem from the wait list (see list.c ~line 222 comments)
      // and advance pointer to next list item 
-     e = list_remove(e);   
+      e = list_remove(e);   
 
      // update our thread pointer to this next item's thread
      t = list_entry(e, struct thread, timer_list_elem);  
