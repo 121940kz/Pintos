@@ -1,0 +1,3 @@
+#! /bin/bash
+cd ~/cis520/Pintos
+git pull

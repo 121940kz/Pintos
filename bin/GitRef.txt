@@ -7,6 +7,7 @@ git commit -m "msg here"         // records a snapshot of staged
 git push                         // git@github.com:OSTeam1/Pintos.git
 
 git pull
+git reflog
 
 ====================================================================
 MAKING A NEW BRANCH or SWITCHING TO IT
