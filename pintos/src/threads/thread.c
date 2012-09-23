@@ -540,8 +540,8 @@ next_thread_to_run (void)
     //return list_entry (list_pop_front(&ready_list), struct thread, elem); //This is what was originally here
     //Below is our new code. //E&H 9.22.12
 
-    list_sort(&ready_list, thread_lower_priority, NULL);
-    return list_entry(list_pop_front(&ready_list), struct thread, elem);
+    list_sort(&ready_list, thread_lower_priority, NULL); //This sorts the list by priority
+    return list_entry(list_pop_front(&ready_list), struct thread, elem); //This returns the first element of the list, which is hopefully now the highest priority one.
     //return &s;
   }
 }
