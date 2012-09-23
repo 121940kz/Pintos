@@ -278,9 +278,11 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  list_push_back (&ready_list, &t->elem);//9.23.2012 E&H When thread is being unblaocked, adds thread to ready list
   t->status = THREAD_READY;
   intr_set_level (old_level);
+  thread_yield_to_higher_priority_();//9.23.2012 E&H We are attempting to yield threat to higher priority after added to ready list
+
 }
 
 /* Returns the name of the running thread. */
@@ -377,13 +379,17 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  //If the current thread no longer has the highest priority, yield to higher priority
+  thread_yield_to_higher_priority_();
 }
 
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) 
 {
-  return thread_current ()->priority;
+    //9.22.2012 E&H, we need to add the ability to do the following: 
+    //In the presence of priority donation, returns the higher (donated) priority
+    return thread_current ()->priority;
 }
 
 /* Sets the current thread's nice value to NICE. */
