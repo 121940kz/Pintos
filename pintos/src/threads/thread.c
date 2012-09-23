@@ -532,7 +532,8 @@ next_thread_to_run (void)
   else{
     //return list_entry (list_pop_front(&ready_list), struct thread, elem); //This is what was originally here
     //Below is our new code. //E&H 9.22.12 
-    struct thread *t =  list_max(&ready_list, compare_threads_by_priority, ); //E&H this line is EVILLLLL!!!!!!111!!1!1!
+    //struct thread *t =  list_max(&ready_list, , NULL); //E&H this line is EVILLLLL!!!!!!111!!1!1!
+    struct thread *t = list_entry(list_max (&ready_list, thread_lower_priority, NULL), struct thread, elem);
     return list_entry (list_remove(&t), struct thread, elem);
   }
 }
@@ -541,11 +542,32 @@ next_thread_to_run (void)
 //9.22.12 E&H  This is the function we added for helping sort the priorities in the 
 //list for the return in the method above this one, the next_thread_to_run.
 bool
-compare_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED)
+thread_lower_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED)
 {
-       const struct thread *a = list_entry(a_, struct thread, elem);
+    const struct thread *a = list_entry(a_, struct thread, elem);
 	const struct thread *b = list_entry(b_, struct thread, elem);
-	return a->priority <= b->priority;
+	return a->priority < b->priority;
+}
+
+//9.23.12 E&H This is a function we found in the lectures. 
+/* If the read list contains a thread with a higher priority, 
+ * yields to it. */
+void thread_yield_to_higher_priority_(void)
+{
+    enum intr_level old_level = intr_disable();
+    if (!list_empty(&ready_list)) 
+    {
+        struct thread *cur = thread_current();
+        struct thread *max = list_entry(list_max (&ready_list, thread_lower_priority, NULL), struct thread, elem);
+        if (max->priority > cur->priority)
+        {
+            if(intr_context())
+                intr_yield_on_return();
+            else
+                thread_yield();
+        }
+    }
+    intr_set_level(old_level);
 }
 
 /* Completes a thread switch by activating the new thread's page
