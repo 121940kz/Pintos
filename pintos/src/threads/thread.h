@@ -102,7 +102,7 @@ struct thread
    int64_t wakeup_time;                // Thread wakeup time. 
    struct list_elem timer_list_elem;   // List element for timer wait list.
    struct semaphore timer_semaphore;   // Timer wait semaphore
-
+  
    // =========================================================================
 
 #ifdef USERPROG
@@ -113,6 +113,14 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
+
+////////////////////////
+//Function added by us
+bool compare_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED); //added 9.22.12 H&E for the priority scheduling list comparison.
+
+
+///////////////////////
+
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
