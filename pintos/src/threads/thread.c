@@ -533,10 +533,9 @@ next_thread_to_run (void)
   else{
     //return list_entry (list_pop_front(&ready_list), struct thread, elem); //This is what was originally here
     //Below is our new code. //E&H 9.22.12
-    struct list_elem *t = list_front(&ready_list); 
-    //struct thread *s = list_entry(list_remove(&t), struct thread, elem);
-    //struct list_elem *t = list_max(&ready_list, thread_lower_priority, NULL);
-    return list_entry(list_remove(&t), struct thread, elem);
+
+    list_sort(&ready_list, thread_lower_priority, NULL);
+    return list_entry(list_pop_front(&ready_list), struct thread, elem);
     //return &s;
   }
 }
