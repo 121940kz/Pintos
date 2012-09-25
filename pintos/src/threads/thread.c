@@ -540,9 +540,13 @@ next_thread_to_run (void)
     //return list_entry (list_pop_front(&ready_list), struct thread, elem); //This is what was originally here
     //Below is our new code. //E&H 9.22.12
 
-    list_sort(&ready_list, thread_lower_priority, NULL); //This sorts the list by priority
-    return list_entry(list_pop_front(&ready_list), struct thread, elem); //This returns the first element of the list, which is hopefully now the highest priority one.
-    //return &s;
+   //I checked this section with Neilson. The struct thread, list remove, and return t are all correct as of 9.25.12
+    //This gets the highest entry in the ready list, then removes that element from the list, and sends the thread
+   //off to be a happy member of the running thread society. They eat ice cream on wednesdays, and enjoy listening
+   //to classical music in their free time.
+    struct thread *t = list_entry(list_max(&ready_list, thread_lower_priority, NULL), struct thread, elem);
+    list_remove(&t->elem);
+    return t;
   }
 }
 
