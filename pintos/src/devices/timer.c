@@ -269,7 +269,10 @@ timer_interrupt (struct intr_frame *args UNUSED)
 
     // release the blocking with the wait timer semaphore
      sema_up(&t->timer_semaphore);
- 
+     
+     //DEH: wake it up
+     thread_yield_to_higher_priority_();
+
      // remove the elem from the wait list (see list.c ~line 222 comments)
      // and advance pointer to next list item 
       e = list_remove(e);   

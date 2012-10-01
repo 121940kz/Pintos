@@ -182,6 +182,7 @@ thread_print_stats (void)
 
 /* Creates a new kernel thread named NAME with the given initial
    PRIORITY, which executes FUNCTION passing AUX as the argument,
+
    and adds it to the ready queue.  Returns the thread identifier
    for the new thread, or TID_ERROR if creation fails.
 
@@ -242,6 +243,8 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  thread_yield_to_higher_priority_();//E&H: Added this 10.01.1981
+
   return tid;
 }
 
@@ -281,8 +284,8 @@ thread_unblock (struct thread *t)
   list_push_back (&ready_list, &t->elem);//9.23.2012 E&H When thread is being unblaocked, adds thread to ready list
   t->status = THREAD_READY;
   intr_set_level (old_level);
-  thread_yield_to_higher_priority_();//9.23.2012 E&H We are attempting to yield threat to higher priority after added to ready list
-
+  //thread_yield_to_higher_priority_();//9.23.2012 E&H We are attempting to yield threat to higher priority after added to ready list
+ 
 }
 
 /* Returns the name of the running thread. */
