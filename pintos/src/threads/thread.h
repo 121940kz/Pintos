@@ -102,6 +102,9 @@ struct thread
    int64_t wakeup_time;                // Thread wakeup time. 
    struct list_elem timer_list_elem;   // List element for timer wait list.
    struct semaphore timer_semaphore;   // Timer wait semaphore
+   int orig_priority;                  // Original thread priority (before donation)
+   int64_t nice;                       // Niceness value (for feedback)
+   int64_t recent_cpu;                 // Recent cpu (for feedback)
   
    // =========================================================================
 
