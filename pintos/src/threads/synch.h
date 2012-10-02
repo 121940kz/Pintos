@@ -4,6 +4,7 @@
 #include <list.h>
 #include <stdbool.h>
 
+
 /* A counting semaphore. */
 struct semaphore 
   {
@@ -26,10 +27,10 @@ void sema_self_test (void);
 struct list lock_list;    // list of active locks
 
 struct lock_elem          // an element in the lock list
-  {
+ {
     struct list_elem elem;   // provides list functionality
     struct lock *lock;       // the lock itself
-  }
+ };
 // ==========================================================
 
 /* Lock. */
