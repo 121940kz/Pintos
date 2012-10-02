@@ -17,6 +17,21 @@ bool sema_try_down (struct semaphore *);
 void sema_up (struct semaphore *);
 void sema_self_test (void);
 
+//=========================================================
+// Added by our team.
+// For priority donation, we need to keep track all threads
+// holding locks.
+// ==========================================================
+
+struct list lock_list;    // list of active locks
+
+struct lock_elem          // an element in the lock list
+  {
+    struct list_elem elem;   // provides list functionality
+    struct lock *lock;       // the lock itself
+  }
+// ==========================================================
+
 /* Lock. */
 struct lock 
   {

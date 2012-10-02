@@ -17,3 +17,12 @@ log-mega.txt
 
 log-multiple.txt
 log-mega.txt
+
+*.sdf
+*.sln
+*.suo
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+pintos/src/ipch
+pintos/src/threads/ipch
