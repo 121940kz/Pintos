@@ -123,6 +123,9 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
 
+  // Initialize the lock list for priority donation
+  list_init (&lock_list); 
+
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -382,6 +385,9 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+
+  thread_current ()->orig_priority = new_priority; // update the original priority
+
   //If the current thread no longer has the highest priority, yield to higher priority
   thread_yield_to_higher_priority_();
 }
@@ -511,6 +517,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+
+  t->orig_priority = t->priority;            // initialize original priority
   sema_init(&t->timer_semaphore,0);          // initialize wait timer semaphore to 0
   list_push_back (&all_list, &t->allelem);
 }

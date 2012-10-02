@@ -35,10 +35,14 @@ struct lock_elem          // an element in the lock list
 
 /* Lock. */
 struct lock 
-  {
+  { 
+    int id;                      // ADDED a lock id - DMC
     struct thread *holder;      /* Thread holding lock (for debugging). */
     struct semaphore semaphore; /* Binary semaphore controlling access. */
   };
+
+bool lock_list_empty(void);           
+struct list_elem *find_lock_list_elem(int lockId); 
 
 void lock_init (struct lock *);
 void lock_acquire (struct lock *);

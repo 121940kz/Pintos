@@ -123,12 +123,12 @@ The lock_list maintains a list of all active locks.
 >> causes a priority donation.  How is nested donation handled?
 
 When a thread tries to aquire a lock: (1) if the lock is available, 
-the thread gets the lock and the lock gets added to the lock_list 
-(2) if the lock is already held than if the attempting thread 
+the thread gets a new lock and the lock gets added to the lock_list 
+(2) if the lock is already held then if the attempting thread 
 has a higher priority than the current holder, it will donate 
 the higher priority.  The current holder's original priority is
 saved so that once the temporary donation is over, the thread priority 
-reverts to the original value.
+reverts to the original value.  Multiple threads can donate priorities.
 
 Nested donation occurs when a thread trys to acquire a lock held by 
 a thread that has already donated priority.  In this case, if the
@@ -138,7 +138,7 @@ way down the line.
 >> B5: Describe the sequence of events when lock_release() is called
 >> on a lock that a higher-priority thread is waiting for.
 
-
+The released thread will revert back to its old priority.
 
 ---- SYNCHRONIZATION ----
 
