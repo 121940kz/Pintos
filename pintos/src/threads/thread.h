@@ -127,6 +127,7 @@ struct thread
 bool thread_lower_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED); //added 9.22.12 H&E for the priority scheduling list comparison.
 void thread_yield_to_higher_priority_(void);
 void thread_donate_priority(struct thread *donor);  // added 10-2 DMC updated to recursive call 10-3 DMC
+void thread_revert_priority_donation(struct thread *loser)  // adding a recursive reversion 10-3 DMC
 
 ///////////////////////
 
