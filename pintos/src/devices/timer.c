@@ -269,9 +269,19 @@ timer_interrupt (struct intr_frame *args UNUSED)
 
     // release the blocking with the wait timer semaphore
      sema_up(&t->timer_semaphore);
+
+    // Is this the only modification? If so, we probably
+    // don't want to start with new versions - it takes longer
+    // to see what's been updated.
+    // I had to start over once, but that was rare - I
+    // could not find our bug - started with the original 
+    // and added our code one line at a time to get it to a partial
+    // working state - and then continued until all the alarm 
+    // tests but "alarm simulataneous" ran correctly.  Can 
+    // you guys take a look at that one?  - DMC
      
-     //DEH: wake it up
-     thread_yield_to_higher_priority_();
+     //DEH: wake it up     
+     thread_yield_to_higher_priority_();  
 
      // remove the elem from the wait list (see list.c ~line 222 comments)
      // and advance pointer to next list item 
