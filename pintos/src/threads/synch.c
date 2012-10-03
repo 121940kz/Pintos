@@ -208,8 +208,8 @@ lock_acquire (struct lock *lock)
 
   if (!lock_try_acquire(lock))
   {
-    cur->acquire_lock = lock;
-    thread_donate_priority(cur);
+    cur->acquire_lock = lock;  // encapsulate everything in the thread
+    thread_donate_priority(cur);  // will only donate there's a gain
   
     // add to list of locks for this thread
     list_push_back (&cur->precedent_lock_list, &cur->precedent_lock_elem);
@@ -217,7 +217,7 @@ lock_acquire (struct lock *lock)
     sema_down (&lock->semaphore);   // original code
     lock->holder = cur;             // mostly original code
 
-    // when done, release my acquire lock (set to NULL)
+    // when done, reset my acquire lock field to NULL)
     cur->acquire_lock = NULL;
   }
 }

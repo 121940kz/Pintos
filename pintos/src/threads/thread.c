@@ -403,7 +403,14 @@ thread_get_priority (void)
 //==========================================================================
 // New functions added by our team
 //==========================================================================
-
+/* "Thread Donate Priority" gets called when a thread tries to acquire a 
+   lock but is prevented by the threads acquire-lock-holding thread.  
+   The donor thread passed in will try to increase the priority of the thread 
+   that is holding the lock it wants to acquire. The current lock holder is 
+   is included with the thread itself to support nested donation. We have tried 
+   to encapsulate all information with each thread. If it gets too big, we'll 
+   try again. - 10.3.12 - DMC
+*/
 void
 thread_donate_priority(struct thread *donor)
 {
@@ -444,30 +451,34 @@ thread_donate_priority(struct thread *donor)
         }
      }
 }
-
+/* "Thread Revert Priority Donation" gets called when a thread releases a lock 
+   and had benefited from priority donation.  - 10.3.12 - DMC
+*/
 void 
 thread_revert_priority_donation(struct thread *loser)
 {
    ASSERT (loser != NULL);
    // if this thread has no other options (does anyone else need me?)
-     if (list_empty(&loser->precedent_lock_list)){
+     if (list_empty(&loser->donating_threads_list)){
 
       // just reset to original 
       loser-> priority = loser->orig_priority;
     }
-    else {
-       // if it has other options, find the biggest daddy (TODO:either compare or insert sorted)
-      
-       // and set to that priority
+    else {  // 
+       // if it has other options, find the highest priority still on my donating threads list
+        struct thread *max = list_entry(list_max (&loser->donating_threads_list, compare_donating_threads_by_priority, NULL), struct thread, donating_threads_elem);
 
-       // if that doesn't work
+        if (max != NULL) {
+       	// and set to that priority
+       	loser->priority = max->priority;
 
+        }       
            // try again on down the list (call recursively)
     }
 }
 
 bool
-compare_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED)
+compare_donating_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED)
 {
        const struct thread *a = list_entry(a_, struct thread, donating_threads_elem);
 	const struct thread *b = list_entry(b_, struct thread, donating_threads_elem);

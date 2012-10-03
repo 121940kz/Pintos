@@ -128,7 +128,7 @@ bool thread_lower_priority(const struct list_elem *a_, const struct list_elem *b
 void thread_yield_to_higher_priority_(void);
 void thread_donate_priority(struct thread *donor);  // added 10-2 DMC updated to recursive call 10-3 DMC
 void thread_revert_priority_donation(struct thread *loser);  // adding a recursive reversion 10-3 DMC
-bool compare_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED); // if sorting list
+bool compare_donating_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED); // if sorting list DMC 10.3
 
 ///////////////////////
 
