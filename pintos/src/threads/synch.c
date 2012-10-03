@@ -118,6 +118,7 @@ sema_up (struct semaphore *sema)
                                 struct thread, elem));
   sema->value++;
   intr_set_level (old_level);
+  thread_yield_to_higher_priority_();  // Added DMC 10.3.12
 }
 
 static void sema_test_helper (void *sema_);
@@ -206,10 +207,10 @@ lock_acquire (struct lock *lock)
 
   struct thread* cur = thread_current ();
 
-  if (!lock_try_acquire(lock))
+  if (!lock_try_acquire(lock))  // if successful, 
   {
     cur->acquire_lock = lock;  // encapsulate everything in the thread
-    thread_donate_priority(cur);  // will only donate there's a gain
+    thread_donate_priority(cur);  // will only donate if there's a gain
   
     // add to list of locks for this thread
     list_push_back (&cur->precedent_lock_list, &cur->precedent_lock_elem);
@@ -240,7 +241,7 @@ lock_try_acquire (struct lock *lock)
   if (success) {
     lock->holder = thread_current ();
   
-    // add to list of locks for this thread
+    // add to list of locks for this thread 
     list_push_back (&lock->holder->precedent_lock_list, &lock->holder->precedent_lock_elem);
   
   }
@@ -263,11 +264,12 @@ lock_release (struct lock *lock)
   // =========================================================================
   // 
   // If the thread that had the lock had received a priority donation, 
-  // it can now revert back to the original priority.
+  // it can now revert back to the original priority - and highest priority
+  // thread waiting on this lock will be free to acquire it.
  
   if (lock->holder->priority != lock->holder->orig_priority)  // donation has happened
   {
-      lock->holder->priority = lock->holder->orig_priority;
+      thread_revert_priority_donation(lock->holder);
   }
   
   // remove this lock from the thread's list

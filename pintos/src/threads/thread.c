@@ -429,8 +429,10 @@ thread_donate_priority(struct thread *donor)
        //if the acquiring thread's acquire-lock-holder is on the ready list
        for (e = list_begin (&ready_list); e != list_end (&ready_list); e = list_next (e))
        {
-          struct thread *t = list_entry (e, struct thread, elem);
-          if (t == &donor->acquire_lock->holder)  { found = true;  }
+           struct thread *t = list_entry (e, struct thread, elem);
+           if (t != NULL) {
+                 if (t == donor->acquire_lock->holder)  { found = true;  }
+           }
        } 
 
        if (found) {
@@ -458,22 +460,22 @@ void
 thread_revert_priority_donation(struct thread *loser)
 {
    ASSERT (loser != NULL);
+   struct list_elem *e;
+
    // if this thread has no other options (does anyone else need me?)
-     if (list_empty(&loser->donating_threads_list)){
+     if (list_empty(&loser->precedent_lock_list)){ 
 
       // just reset to original 
       loser-> priority = loser->orig_priority;
     }
-    else {  // 
+    else {  
        // if it has other options, find the highest priority still on my donating threads list
-        struct thread *max = list_entry(list_max (&loser->donating_threads_list, compare_donating_threads_by_priority, NULL), struct thread, donating_threads_elem);
-
-        if (max != NULL) {
-       	// and set to that priority
-       	loser->priority = max->priority;
-
-        }       
-           // try again on down the list (call recursively)
+       loser-> priority = loser->orig_priority;
+       //for (e = list_begin (&loser->donating_threads_list); e != list_end (&loser->donating_threads_list); e = list_next (e))
+       //{
+        //     struct thread *t = list_entry (e, struct thread, donating_threads_elem);
+        //     if (t->priority > loser->priority )  {  loser-> priority = t->priority;  }
+       // } 
     }
 }
 
