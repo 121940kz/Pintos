@@ -209,22 +209,15 @@ lock_acquire (struct lock *lock)
   if (!lock_try_acquire(lock))
   {
     cur->acquire_lock = lock;
-
-    if (cur->priority > lock->holder->priority )
-    {
-      thread_donate_priority(cur, lock->holder);
-     
-      // add donor to lock-holders list of benefactors (unordered for now)
-       list_push_back (&lock->holder->donating_threads_list, &lock->holder->donating_threads_elem);
-    }
-
+    thread_donate_priority(cur);
+  
     // add to list of locks for this thread
     list_push_back (&cur->precedent_lock_list, &cur->precedent_lock_elem);
  
     sema_down (&lock->semaphore);   // original code
     lock->holder = cur;             // mostly original code
 
-    // when done, release my acquire lock
+    // when done, release my acquire lock (set to NULL)
     cur->acquire_lock = NULL;
   }
 }

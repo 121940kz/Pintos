@@ -405,11 +405,29 @@ thread_get_priority (void)
 //==========================================================================
 
 void
-thread_donate_priority(struct thread *donor, struct thread *holder)
+thread_donate_priority(struct thread *donor)
 {
-	ASSERT (donor != NULL);
-	ASSERT (holder !=NULL);
-    holder->priority = donor->priority;
+   ASSERT (donor != NULL);
+   ASSERT (donor->acquire_lock != NULL);
+
+   //if the acquiring thread has a greater priority than the lock-holder's,
+    if (donor->priority > donor->acquire_lock->holder->priority )
+    {
+       donor->acquire_lock->holder->priority = donor->priority;
+       list_push_back (&donor->acquire_lock->holder->donating_threads_list, &donor->acquire_lock->holder->donating_threads_elem);
+
+       //if the acquiring thread's acquire-lock-holder is blocked or ready,
+       //TODO: take it off the prioritized list of threads
+
+       //TODO: and reinsert it with the new higher priority.
+
+        //if the acquiring thread's acquire-lock-holder also has an 
+        //acquire-lock-holder, then recursively call the donate priority
+        //function with this acquire-lock-holder. 
+        if (donor->acquire_lock->holder->acquire_lock != NULL) {
+             thread_donate_priority(donor->acquire_lock->holder);
+        }
+     }
 }
 
 bool
