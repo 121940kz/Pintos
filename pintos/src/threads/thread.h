@@ -99,15 +99,17 @@ struct thread
    // additions to the thread struct by our coding team 
    // =========================================================================
 
-   int64_t wakeup_time;                  // Thread wakeup time. 
-   struct list_elem timer_list_elem;     // List element for timer wait list.
-   struct semaphore timer_semaphore;     // Timer wait semaphore
-   int orig_priority;                    // Original thread priority (before donation)
-   struct list precedent_lock_list;      // list of locks this thread is waiting on
-   struct list_elem precedent_lock_elem;  // List element for list of locks 
-   struct list donating_threads_list;    // list of threads that have donated priorities
-   int64_t nice;                         // Niceness value (for feedback)
-   int64_t recent_cpu;                   // Recent cpu (for feedback)
+   int64_t wakeup_time;                     // Thread wakeup time. 
+   struct list_elem timer_list_elem;        // List element for timer wait list.
+   struct semaphore timer_semaphore;        // Timer wait semaphore
+   int orig_priority;                       // Original thread priority (before donation)
+   struct list precedent_lock_list;         // list of locks this thread is waiting on
+   struct list donating_threads_list;       // list of threads that have donated priorities
+   struct list_elem precedent_lock_elem;    // List element for list of locks 
+   struct list_elem donating_threads_elem;  // List element for list of donors 
+   struct lock * acquire_lock;              // ptr to the acquire lock 
+   int64_t nice;                            // Niceness value (for feedback)
+   int64_t recent_cpu;                      // Recent cpu (for feedback)
   
    // =========================================================================
 

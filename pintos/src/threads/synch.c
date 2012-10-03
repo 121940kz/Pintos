@@ -199,24 +199,33 @@ lock_acquire (struct lock *lock)
   // =========================================================================
   // Added by our team
   // =========================================================================
-  // When a thread tries to aquire a lock, if the lock is already held 
+  // When a thread tries to aquire a lock, if the lock is already held, then 
   // if the attempting thread has a higher priority than the current holder, 
-  // it will donate the higher priority.  
+  // it should donate the higher priority.  When the lock-holding thread 
+  // releases the lock, the other threads should acquire it in priority order.
 
   struct thread* cur = thread_current ();
 
   if (!lock_try_acquire(lock))
   {
+    cur->acquire_lock = lock;
+
     if (cur->priority > lock->holder->priority )
     {
       thread_donate_priority(cur, lock->holder);
+     
+      // add donor to lock-holders list of benefactors (unordered for now)
+       list_push_back (&lock->holder->donating_threads_list, &lock->holder->donating_threads_elem);
     }
 
-    // add to list of locks this thread is waiting on
+    // add to list of locks for this thread
     list_push_back (&cur->precedent_lock_list, &cur->precedent_lock_elem);
  
     sema_down (&lock->semaphore);   // original code
     lock->holder = cur;             // mostly original code
+
+    // when done, release my acquire lock
+    cur->acquire_lock = NULL;
   }
 }
 
@@ -235,8 +244,13 @@ lock_try_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
 
   success = sema_try_down (&lock->semaphore);
-  if (success)
+  if (success) {
     lock->holder = thread_current ();
+  
+    // add to list of locks for this thread
+    list_push_back (&lock->holder->precedent_lock_list, &lock->holder->precedent_lock_elem);
+  
+  }
   return success;
 }
 
@@ -257,13 +271,14 @@ lock_release (struct lock *lock)
   // 
   // If the thread that had the lock had received a priority donation, 
   // it can now revert back to the original priority.
-
-  if (lock->holder->priority != lock->holder->orig_priority)
+ 
+  if (lock->holder->priority != lock->holder->orig_priority)  // donation has happened
   {
       lock->holder->priority = lock->holder->orig_priority;
   }
   
-   // remove the list item associated with this lock 
+  // remove this lock from the thread's list
+   list_remove (&lock->holder->precedent_lock_elem);
   
   // set the lock holder to NULL
   lock->holder = NULL;           // original code

@@ -125,7 +125,7 @@ The lock_list maintains a list of all active locks.
 The thread that wants to acquire the lock will donate their priority to 
 the lock holder. The lock holder's original priority is maintained in their
 orig_priority field. The thread that wants to acquire the lock adds the 
-desired lock to their list of precendent locks. The thread holding the lock 
+desired lock to their list of locks. The thread holding the lock 
 adds the donor thread to their list of threads that have made priority donations
 in sorted order with the highest priority donors at the top/front of the list.
 
@@ -134,6 +134,21 @@ When a still higher priority thread attempts to get the lock, the new highest
 priority will be donated to the lock holder. The lock holder will add the new 
 donor to its list of donor threads, and will work through its list of precendant locks and
 donate this new highest priority to all threads that hold lock on its prescedent list.
+
+When donating priority:
+   if the acquiring thread has a greater priority than the lock-holder's,
+   upgrade the lock-holder priority
+   add acquiring thread to donor list
+
+   if the acquiring thread's acquire-lock-holder is blocked or ready,
+   take it off the prioritized list and reinsert it with the new 
+   higher priority.
+
+   if the acquiring thread's acquire-lock-holder also has an 
+   acquire-lock-holder, then recursively call the donate priority
+   function with this acquire-lock-holder. 
+
+
 
 >> B5: Describe the sequence of events when lock_release() is called
 >> on a lock that a higher-priority thread is waiting for.

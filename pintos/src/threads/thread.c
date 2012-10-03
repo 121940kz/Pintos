@@ -401,7 +401,7 @@ thread_get_priority (void)
 }
 
 //==========================================================================
-// New function added by our team
+// New functions added by our team
 //==========================================================================
 
 void
@@ -411,6 +411,16 @@ thread_donate_priority(struct thread *donor, struct thread *holder)
 	ASSERT (holder !=NULL);
     holder->priority = donor->priority;
 }
+
+bool
+compare_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED)
+{
+       const struct thread *a = list_entry(a_, struct thread, donating_threads_elem);
+	const struct thread *b = list_entry(b_, struct thread, donating_threads_elem);
+	return a->priority <= b->priority; 
+}
+
+//==========================================================================
 
 /* Sets the current thread's nice value to NICE. */
 void
@@ -533,6 +543,7 @@ init_thread (struct thread *t, const char *name, int priority)
   sema_init(&t->timer_semaphore,0);          // initialize wait timer semaphore to 0
   list_init(&t->precedent_lock_list);        // initialize the list of precedent locks
   list_init(&t->donating_threads_list);      // initialize the list of threads that have donated
+  t->acquire_lock;                           // set the lock used while acquiring a lock to null
   list_push_back (&all_list, &t->allelem);
 }
 
