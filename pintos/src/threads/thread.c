@@ -430,6 +430,27 @@ thread_donate_priority(struct thread *donor)
      }
 }
 
+void 
+thread_revert_priority_donation(struct thread *loser)
+{
+   ASSERT (loser != NULL);
+   // if this thread has no other options (does anyone else need me?)
+     if (list_empty(&loser->precedent_lock_list)){
+
+      // just reset to original 
+      loser-> priority = loser->orig_priority;
+    }
+    else {
+       // if it has other options, find the biggest daddy
+      
+       // and set to that priority
+
+       // if that doesn't work
+
+           // try again on down the list (call recursively)
+    }
+}
+
 bool
 compare_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED)
 {
