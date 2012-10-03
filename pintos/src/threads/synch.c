@@ -195,26 +195,29 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
-  
 
-// =========================================================================
-// Added by our team
-// =========================================================================
-// When a thread tries to aquire a lock: (1) if the lock is available, 
-// the thread makes a new lock and the lock gets added to the lock_list 
-// (2) if the lock is already held than if the attempting thread 
-// has a higher priority than the current holder, it will donate 
-// the higher priority.  The current holder's original priority is
-// saved so that once the temporary donation is over, the thread priority 
-// reverts to the original value.
+  // =========================================================================
+  // Added by our team
+  // =========================================================================
+  // When a thread tries to aquire a lock, if the lock is already held 
+  // if the attempting thread has a higher priority than the current holder, 
+  // it will donate the higher priority.  
 
+  struct thread* cur = thread_current ();
+
+  if (!lock_try_acquire(lock))
+  {
+    if (cur->priority > lock->holder->priority )
+    {
+      thread_donate_priority(cur, lock->holder);
+    }
+
+    // add to list of locks this thread is waiting on
+    list_push_back (&cur->precedent_lock_list, &cur->precedent_lock_elem);
  
-
-
-// =========================================================================
-
-  sema_down (&lock->semaphore);
-  lock->holder = thread_current ();
+    sema_down (&lock->semaphore);   // original code
+    lock->holder = cur;             // mostly original code
+  }
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -255,14 +258,16 @@ lock_release (struct lock *lock)
   // If the thread that had the lock had received a priority donation, 
   // it can now revert back to the original priority.
 
- 
+  if (lock->holder->priority != lock->holder->orig_priority)
+  {
+      lock->holder->priority = lock->holder->orig_priority;
+  }
+  
+   // remove the list item associated with this lock 
+  
   // set the lock holder to NULL
   lock->holder = NULL;           // original code
-
- 
   sema_up (&lock->semaphore);    // original code
-
- 
 }
 
 /* Returns true if the current thread holds LOCK, false

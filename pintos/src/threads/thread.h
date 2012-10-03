@@ -99,12 +99,15 @@ struct thread
    // additions to the thread struct by our coding team 
    // =========================================================================
 
-   int64_t wakeup_time;                // Thread wakeup time. 
-   struct list_elem timer_list_elem;   // List element for timer wait list.
-   struct semaphore timer_semaphore;   // Timer wait semaphore
-   int orig_priority;                  // Original thread priority (before donation)
-   int64_t nice;                       // Niceness value (for feedback)
-   int64_t recent_cpu;                 // Recent cpu (for feedback)
+   int64_t wakeup_time;                  // Thread wakeup time. 
+   struct list_elem timer_list_elem;     // List element for timer wait list.
+   struct semaphore timer_semaphore;     // Timer wait semaphore
+   int orig_priority;                    // Original thread priority (before donation)
+   struct list precedent_lock_list;      // list of locks this thread is waiting on
+   struct list_elem precedent_lock_elem;  // List element for list of locks 
+   struct list donating_threads_list;    // list of threads that have donated priorities
+   int64_t nice;                         // Niceness value (for feedback)
+   int64_t recent_cpu;                   // Recent cpu (for feedback)
   
    // =========================================================================
 
@@ -121,6 +124,7 @@ struct thread
 //Function added by us
 bool thread_lower_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED); //added 9.22.12 H&E for the priority scheduling list comparison.
 void thread_yield_to_higher_priority_(void);
+void thread_donate_priority(struct thread *donor, struct thread *holder);  // added 10-2 DMC
 
 ///////////////////////
 

@@ -395,7 +395,21 @@ thread_get_priority (void)
 {
     //9.22.2012 E&H, we need to add the ability to do the following: 
     //In the presence of priority donation, returns the higher (donated) priority
+    // This should be okay - the priority is the active priority (the original
+    // priority is kept in t->orig_priority.  - DMC
     return thread_current ()->priority;
+}
+
+//==========================================================================
+// New function added by our team
+//==========================================================================
+
+void
+thread_donate_priority(struct thread *donor, struct thread *holder)
+{
+	ASSERT (donor != NULL);
+	ASSERT (holder !=NULL);
+    holder->priority = donor->priority;
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -517,6 +531,8 @@ init_thread (struct thread *t, const char *name, int priority)
 
   t->orig_priority = t->priority;            // initialize original priority
   sema_init(&t->timer_semaphore,0);          // initialize wait timer semaphore to 0
+  list_init(&t->precedent_lock_list);        // initialize the list of precedent locks
+  list_init(&t->donating_threads_list);      // initialize the list of threads that have donated
   list_push_back (&all_list, &t->allelem);
 }
 
