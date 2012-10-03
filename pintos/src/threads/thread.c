@@ -416,10 +416,25 @@ thread_donate_priority(struct thread *donor)
        donor->acquire_lock->holder->priority = donor->priority;
        list_push_back (&donor->acquire_lock->holder->donating_threads_list, &donor->acquire_lock->holder->donating_threads_elem);
 
-       //if the acquiring thread's acquire-lock-holder is blocked or ready,
-       //TODO: take it off the prioritized list of threads
+       bool found = false;
+       struct list_elem *e;
 
-       //TODO: and reinsert it with the new higher priority.
+       //if the acquiring thread's acquire-lock-holder is on the ready list
+       for (e = list_begin (&ready_list); e != list_end (&ready_list); e = list_next (e))
+       {
+          struct thread *t = list_entry (e, struct thread, elem);
+          if (t == &donor->acquire_lock->holder)  { found = true;  }
+       } 
+
+       if (found) {
+       
+          //take it off the prioritized list of threads 
+    	   list_remove(&donor->acquire_lock->holder->elem);
+
+          //And reinsert it with the new higher priority.
+          list_push_back (&ready_list, &donor->acquire_lock->holder->elem);
+
+        }
 
         //if the acquiring thread's acquire-lock-holder also has an 
         //acquire-lock-holder, then recursively call the donate priority
@@ -441,7 +456,7 @@ thread_revert_priority_donation(struct thread *loser)
       loser-> priority = loser->orig_priority;
     }
     else {
-       // if it has other options, find the biggest daddy
+       // if it has other options, find the biggest daddy (TODO:either compare or insert sorted)
       
        // and set to that priority
 
