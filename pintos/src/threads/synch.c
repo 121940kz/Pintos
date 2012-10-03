@@ -177,11 +177,8 @@ lock_init (struct lock *lock)
 {
   ASSERT (lock != NULL);
 
-  lock->holder = NULL;
+  lock->holder = NULL;  // no one holds the lock until acquired
   sema_init (&lock->semaphore, 1);
-
-  lock->id = -1;  // Initialize lock id - added DMC
-
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
@@ -198,6 +195,7 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
+  
 
 // =========================================================================
 // Added by our team
@@ -210,42 +208,7 @@ lock_acquire (struct lock *lock)
 // saved so that once the temporary donation is over, the thread priority 
 // reverts to the original value.
 
-  // get pointer to first item in lock_list (beginning)
-  struct list_elem *e = list_begin (&lock_list); 
-
-  // get a pointer to the first lock_elem itself (see list.c ~line128)
-  struct lock_elem *l = list_entry(e, struct lock_elem, elem);
-
-  // get the requested lock id 
-  int requestid = &lock->id;
-
-  // found means the requested lock is already on the list
-  bool found = false;
-
-  // disable interrupts 
-  enum intr_level old_level = intr_disable ();
-
-  // check each item in the lock list to see if requested lock is on the list
-   while (e != list_end(&lock_list) )  {
-       l = list_entry(e, struct lock_elem, elem);
-       if (l->lock->id == requestid) {
-          // we found a match
-          found = true;
-          // 
-          printf("We found a match - maybe we should donate our priority\n.");
-       }
-       e = list_next(&lock_list);
-   }
-   if (!found) {
-
-    // make a new lock elem 
-
-    // and add it to the list 
-
-   // printf ("The lock isn't on the list, we'll make a new one\n.");
-  
-   }
-   intr_set_level (old_level);
+ 
 
 
 // =========================================================================
@@ -289,78 +252,17 @@ lock_release (struct lock *lock)
   // Added by our team 
   // =========================================================================
   // 
-  // Remove the lock from the lock list.
-  //
   // If the thread that had the lock had received a priority donation, 
   // it can now revert back to the original priority.
 
-  //disable interrupts 
-  enum intr_level old_level = intr_disable ();
-
-  // remove this lock from the lock_list
-  struct list_elem * e = find_lock_list_elem(lock->id);
-  if (e != NULL) {list_remove(e);}
-
+ 
   // set the lock holder to NULL
   lock->holder = NULL;           // original code
 
-  struct thread *cur = thread_current ();
-  bool donated = false;
-
-  // if our priority is better than original, we had been a beneficiary
-  // of priority donation and we need to revert
-  if (cur->priority > cur->orig_priority)
-   {
-     // reset priority
- //    cur->priority = cur->orig_priority;
-
-     // and note that we were enhanced
-     donated = true;
-   }
-
+ 
   sema_up (&lock->semaphore);    // original code
 
-  // if we were donated, yield
-  if (donated) {  thread_yield_to_higher_priority_();  }
-
-  // enable interrupts at completion
-    intr_set_level (old_level);
-}
-// ===================================================
-// New method to find a lock in the lock_list by id
-
-// returns NULL if not found, or the lock list elem 
-// if the given lock id is on the lock list
-//====================================================
-
-struct list_elem * find_lock_list_elem(int lockId){
-
-  ASSERT (intr_get_level () == INTR_OFF);
-  if (lock_list_empty()) {return NULL;}
-
-  // get pointer to first item in lock_list (beginning)
-  struct list_elem *e = list_begin (&lock_list); 
-
-  // get a pointer to the first lock_elem itself (see list.c ~line128)
-  struct lock_elem *l = list_entry(e, struct lock_elem, elem);
-
-  // check each item in the lock list to see if requested lock is on the list
-   while (e != list_end(&lock_list) )  {
-       l = list_entry(e, struct lock_elem, elem);
-       if (l->lock->id == lockId) {
-    		return e;
-       }
-       e = list_next(&lock_list);
-   }
-  return NULL;  // if we reach here, it wasn't found
-}
-
-// ===================================================
-// New method to see if the lock list is empty
-//====================================================
-
-bool lock_list_empty(void){
-  return list_empty(&lock_list);
+ 
 }
 
 /* Returns true if the current thread holds LOCK, false

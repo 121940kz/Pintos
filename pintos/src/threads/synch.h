@@ -18,31 +18,12 @@ bool sema_try_down (struct semaphore *);
 void sema_up (struct semaphore *);
 void sema_self_test (void);
 
-//=========================================================
-// Added by our team.
-// For priority donation, we need to keep track all threads
-// holding locks.
-// ==========================================================
-
-struct list lock_list;    // list of active locks
-
-struct lock_elem          // an element in the lock list
- {
-    struct list_elem elem;   // provides list functionality
-    struct lock *lock;       // the lock itself
- };
-// ==========================================================
-
 /* Lock. */
 struct lock 
   { 
-    int id;                      // ADDED a lock id - DMC
     struct thread *holder;      /* Thread holding lock (for debugging). */
     struct semaphore semaphore; /* Binary semaphore controlling access. */
   };
-
-bool lock_list_empty(void);           
-struct list_elem *find_lock_list_elem(int lockId); 
 
 void lock_init (struct lock *);
 void lock_acquire (struct lock *);

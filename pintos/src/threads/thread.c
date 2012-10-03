@@ -123,9 +123,6 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
 
-  // Initialize the lock list for priority donation
-  list_init (&lock_list); 
-
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
