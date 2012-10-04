@@ -128,9 +128,6 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-
-  printf("intial thread init with tid of %d", initial_thread->tid);        ///////////////////////////
-
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -381,8 +378,22 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+ /* Sets the thread's base priority. The thread's effective priority 
+   becomes the higher of the newly set priority or the highest donated 
+   priority. When the donations are released, the thread's priority becomes 
+   the one set through the function call. This behavior is checked by the 
+   priority-donate-lower test. - from documentation DMC*/ 
 
+  // The thread's effective priority is the higher of the newly set priority 
+  // or the highest donated priority.  If there's no donors,it has to get set.
+
+  if (list_empty(&thread_current ()->donating_threads_list)) {
+      thread_current()->priority = new_priority;
+  }
+  else if (new_priority > thread_current ()->priority) {
+      thread_current ()->priority = new_priority;
+  }
+  thread_current()->priority = new_priority;// TODO: this needs to be removed once working right
   thread_current ()->orig_priority = new_priority; // update the original priority
 
   //If the current thread no longer has the highest priority, yield to higher priority
