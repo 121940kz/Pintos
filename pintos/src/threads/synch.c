@@ -113,9 +113,19 @@ sema_up (struct semaphore *sema)
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
-  if (!list_empty (&sema->waiters)) 
-    thread_unblock (list_entry (list_pop_front (&sema->waiters),
-                                struct thread, elem));
+
+  struct thread * t;
+  if (!list_empty (&sema->waiters)) {
+
+     // Release max priority - not just any waiter DMC (finally!) 10.4.2012 
+      t = list_entry(list_max(&sema->waiters, thread_lower_priority, NULL), struct thread, elem);
+      list_remove(list_max(&sema->waiters, thread_lower_priority, NULL));
+      thread_unblock(t);
+ 
+      //    thread_unblock (list_entry (list_pop_front (&sema->waiters),
+      //                         struct thread, elem));
+
+  }
   sema->value++;
   intr_set_level (old_level);
   thread_yield_to_higher_priority_();  // Added DMC 10.3.12

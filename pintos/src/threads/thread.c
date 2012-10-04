@@ -387,15 +387,17 @@ thread_set_priority (int new_priority)
   // The thread's effective priority is the higher of the newly set priority 
   // or the highest donated priority.  If there's no donors,it has to get set.
 
-  if (list_empty(&thread_current ()->donating_threads_list)) {
-      thread_current()->priority = new_priority;
+   struct thread* c = thread_current();
+   enum intr_level old_level = intr_disable();
+   c->priority = new_priority;
+   if (!list_empty(&c->donating_threads_list)) {
+     struct thread *t = list_entry(list_max(&c->donating_threads_list, compare_donating_threads_by_priority, NULL), struct thread, donating_threads_elem);
+     if (t->priority > new_priority) {
+         c->priority = t->priority;
+     }
   }
-  else if (new_priority > thread_current ()->priority) {
-      thread_current ()->priority = new_priority;
-  }
-  thread_current()->priority = new_priority;// TODO: this needs to be removed once working right
-  thread_current ()->orig_priority = new_priority; // update the original priority
-
+  intr_set_level(old_level);
+  c->orig_priority = new_priority; // update the original priority
   //If the current thread no longer has the highest priority, yield to higher priority
   thread_yield_to_higher_priority_();
 }
@@ -428,11 +430,13 @@ thread_donate_priority(struct thread *donor)
    ASSERT (donor != NULL);
    ASSERT (donor->acquire_lock != NULL);
 
+   struct thread * h = donor->acquire_lock->holder;
+
    //if the acquiring thread has a greater priority than the lock-holder's,
-    if (donor->priority > donor->acquire_lock->holder->priority )
+    if (donor->priority > h->priority )
     {
-       donor->acquire_lock->holder->priority = donor->priority;
-       list_push_back (&donor->acquire_lock->holder->donating_threads_list, &donor->acquire_lock->holder->donating_threads_elem);
+       h->priority = donor->priority;
+       list_push_back (&h->donating_threads_list, &h->donating_threads_elem);
 
        bool found = false;
        struct list_elem *e;
@@ -442,25 +446,25 @@ thread_donate_priority(struct thread *donor)
        {
            struct thread *t = list_entry (e, struct thread, elem);
            if (t != NULL) {
-                 if (t == donor->acquire_lock->holder)  { found = true;  }
+                 if (t == h)  { found = true;  }
            }
        } 
 
-       if (found) {
+       if (found  ){ 
        
           //take it off the prioritized list of threads 
-    	   list_remove(&donor->acquire_lock->holder->elem);
+    	   list_remove(&h->elem);
 
           //And reinsert it with the new higher priority.
-          list_push_back (&ready_list, &donor->acquire_lock->holder->elem);
+          list_push_back (&ready_list, &h->elem);
 
         }
 
         //if the acquiring thread's acquire-lock-holder also has an 
         //acquire-lock-holder, then recursively call the donate priority
         //function with this acquire-lock-holder. 
-        if (donor->acquire_lock->holder->acquire_lock != NULL) {
-             thread_donate_priority(donor->acquire_lock->holder);
+        if (h->acquire_lock != NULL) {
+             thread_donate_priority(h);
         }
      }
 }
