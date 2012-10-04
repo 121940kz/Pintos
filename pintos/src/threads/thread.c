@@ -469,29 +469,61 @@ thread_donate_priority(struct thread *donor)
      }
 }
 /* "Thread Revert Priority Donation" gets called when a thread releases a lock 
-   and had benefited from priority donation.  - 10.3.12 - DMC
+   and had benefited from priority donation.  The thread that is losing the lock
+   will not be a contributor anymore. Only other threads still needing that lock
+   can donate priority. If no one else cares (or has a higher priority) the 
+   new lock holder's priority will be their original priority.  If at least one 
+   other contributes, it should be the highest of all the remaining donors. 
+   - 10.3.12 - DMC
 */
 void 
 thread_revert_priority_donation(struct thread *loser)
 {
    ASSERT (loser != NULL);
-   struct list_elem *e;
+   // loser->acquire_lock is the lock I'm in the process of releasing (along with any priority donated along with it)
 
    // if this thread has no other options (does anyone else need me?)
      if (list_empty(&loser->precedent_lock_list)){ 
 
       // just reset to original 
       loser-> priority = loser->orig_priority;
+      return;
     }
-    else {  
-       // if it has other options, find the highest priority still on my donating threads list
-       loser-> priority = loser->orig_priority;
-       //for (e = list_begin (&loser->donating_threads_list); e != list_end (&loser->donating_threads_list); e = list_next (e))
-       //{
-        //     struct thread *t = list_entry (e, struct thread, donating_threads_elem);
-        //     if (t->priority > loser->priority )  {  loser-> priority = t->priority;  }
-       // } 
-    }
+   
+    // at least one thread is blocked by this lock and has made a priority donation - I want to get the highest priority I can
+    enum intr_level old_level = intr_disable();
+    loser->priority = loser->orig_priority; // This is temporary. I want to release the lock and its priority and get my remaining highest priority donation.
+    
+     // struct list_elem *e;  // second choice - also doesn't work
+     // for (e = list_begin (&loser->donating_threads_list); e != list_end (&loser->donating_threads_list);
+     //      e = list_next (e))
+      //  {
+     //     struct thread *t = list_entry (e, struct thread, donating_threads_elem);
+          
+     //   }
+
+     // first choice - but doesn't work
+     //struct thread *t = list_entry(list_max(&loser->donating_threads_list, compare_donating_threads_by_priority, NULL), struct thread, donating_threads_elem);
+     //  if (t->priority > loser->priority) {
+          //loser->priority = t->priority;
+     //}
+  
+    intr_set_level(old_level);
+   
+}
+bool 
+is_precedent(struct lock * l, struct thread * t) 
+{ 
+    ASSERT (t != NULL);
+    if (l == NULL) return false;
+    struct list_elem * e;
+    for (e = list_begin (&t->precedent_lock_list); e != list_end (&t->precedent_lock_list);
+          e = list_next (e))
+       {
+         struct lock * i = list_entry (e, struct lock, lock_list_elem);
+         if (l == i)  {return true;}
+         return false;
+       }
 }
 
 bool
@@ -499,7 +531,7 @@ compare_donating_threads_by_priority(const struct list_elem *a_, const struct li
 {
        const struct thread *a = list_entry(a_, struct thread, donating_threads_elem);
 	const struct thread *b = list_entry(b_, struct thread, donating_threads_elem);
-	return a->priority <= b->priority; 
+	return a->priority < b->priority; 
 }
 
 //==========================================================================

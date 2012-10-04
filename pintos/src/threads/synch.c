@@ -274,18 +274,18 @@ lock_release (struct lock *lock)
   // =========================================================================
   // 
   // If the thread that had the lock had received a priority donation, 
-  // it can now revert back to the original priority - and highest priority
-  // thread waiting on this lock will be free to acquire it.
+  // it can now revert back to the original priority (or a donated priority) - 
+  // and highest priority thread waiting on this lock will be free to acquire it.
  
+  // remove this lock from the releasing thread's list first
+   list_remove (&lock->holder->precedent_lock_elem);
+
   if (lock->holder->priority != lock->holder->orig_priority)  // donation has happened
   {
       thread_revert_priority_donation(lock->holder);
   }
-  
-  // remove this lock from the thread's list
-   list_remove (&lock->holder->precedent_lock_elem);
-  
-  // set the lock holder to NULL
+   
+  // set the current lock holder to NULL
   lock->holder = NULL;           // original code
   sema_up (&lock->semaphore);    // original code
 }
