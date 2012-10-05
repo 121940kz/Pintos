@@ -388,8 +388,10 @@ thread_set_priority (int new_priority)
   // or the highest donated priority.  If there's no donors,it has to get set.
 
    struct thread* c = thread_current();
+   c ->priority = new_priority; 
    recompute_priority(c); 
-   /*  
+   
+   /*
    enum intr_level old_level = intr_disable();
    c->priority = new_priority;
    if (!list_empty(&c->donating_threads_list)) {
@@ -398,9 +400,11 @@ thread_set_priority (int new_priority)
          c->priority = t->priority;
      }
   }
+  
   intr_set_level(old_level);
-  c->orig_priority = new_priority; // update the original priority
   */
+  c->orig_priority = new_priority; // update the original priority
+   
   //If the current thread no longer has the highest priority, yield to higher priority
   thread_yield_to_higher_priority_();
 }
@@ -453,10 +457,10 @@ thread_donate_priority(struct thread *donor)
            }
        } 
 
-       if (found  ){ 
+       if (found){ 
        
           //take it off the prioritized list of threads 
-    	   list_remove(&h->elem);
+    	  list_remove(&h->elem);
 
           //And reinsert it with the new higher priority.
           list_push_back (&ready_list, &h->elem);
@@ -484,7 +488,6 @@ thread_revert_priority_donation(struct thread *loser)
 {
    ASSERT (loser != NULL);
    // loser->acquire_lock is the lock I'm in the process of releasing (along with any priority donated along with it)
-
    // if this thread has no other options (does anyone else need me?)
      if (list_empty(&loser->precedent_lock_list)){ 
 
@@ -532,14 +535,15 @@ is_precedent(struct lock * l, struct thread * t)
 bool
 compare_donating_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED)
 {
-       const struct thread *a = list_entry(a_, struct thread, donating_threads_elem);
+    const struct thread *a = list_entry(a_, struct thread, donating_threads_elem);
 	const struct thread *b = list_entry(b_, struct thread, donating_threads_elem);
 	return a->priority < b->priority; 
 }
 
-void recompute_priority(struct *c)
+void recompute_priority(struct thread *c)
 {
-    intr_disable();
+    int old_priority = c->priority;//E&H: 10.4.2012 We decided to save the "old" value of priority
+    enum intr_level old_level = intr_disable();
 
     //check if donor list is empty 
 
@@ -547,22 +551,23 @@ void recompute_priority(struct *c)
        //if donated priority of thread is greater than default prioirty, otherise donation is defulat priority 
        //if t priority is greater than old priority && donned is not null 
        //then do a recursive call 
-
     if (!list_empty(&c->donating_threads_list)) //Check if donor list is empty
     {
-        struct thread *t = list_entry(list_max(&c->donating_threads_list, compare_donating_threads_by_priority, NULL), struct thread, donating_threads_elem);
-        if (t->priority > new_priority)
+        c->priority = list_size(&c->donating_threads_list); //wasssuuuuuup
+        struct thread *t = list_max(&c->donating_threads_list, compare_donating_threads_by_priority, NULL);
+            //, struct thread, donating_threads_elem));
+        if (t->priority > c->priority)
         {
            c->priority = t->priority;
         }
+        
+        if (c->priority > old_priority)//If c priority is greater than old priority then do a recursive call 
+        {
+            recompute_priority(c);
+        }
+        
     }
-    
     intr_set_level(old_level);
-    c->orig_priority = new_priority; // update the original priority
-
-
-
-
 }
 
 
@@ -845,7 +850,7 @@ allocate_tid (void)
 
   return tid;
 }
-
+
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);

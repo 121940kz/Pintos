@@ -105,7 +105,7 @@ struct thread
    int orig_priority;                       // Original thread priority (before donation)
    struct list precedent_lock_list;         // list of locks this thread is waiting on
    struct list donating_threads_list;       // list of threads that have donated priorities
-   struct thread *donee                     // Keep record of who you donated to 
+   struct thread *donee;                     // Keep record of who you donated to 
    struct list_elem precedent_lock_elem;    // List element for list of locks 
    struct list_elem donating_threads_elem;  // List element for list of donors 
    struct lock * acquire_lock;              // ptr to the acquire lock 
