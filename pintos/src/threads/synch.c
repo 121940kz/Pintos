@@ -217,9 +217,12 @@ lock_acquire (struct lock *lock)
 
   struct thread* cur = thread_current ();
 
-  if (!lock_try_acquire(lock))  // if successful, 
-  {
+  if (!lock_try_acquire(lock))  // while waiting to be successful
+   {
     cur->acquire_lock = lock;  // encapsulate everything in the thread
+    cur->donee = lock->holder;   // DMC 10.5.12 
+    ASSERT(cur->donee != NULL);  // DMC 10.5.12
+
     thread_donate_priority(cur);  // will only donate if there's a gain
   
     // add to list of locks for this thread
@@ -230,6 +233,7 @@ lock_acquire (struct lock *lock)
 
     // when done, reset my acquire lock field to NULL)
     cur->acquire_lock = NULL;
+    cur->donee = NULL;   //DMC 10.5.12
   }
 }
 
@@ -279,10 +283,10 @@ lock_release (struct lock *lock)
  
   // remove this lock from the releasing thread's list first
    list_remove (&lock->holder->precedent_lock_elem);
-
+  
   if (lock->holder->priority != lock->holder->orig_priority)  // donation has happened
   {
-      thread_revert_priority_donation(lock->holder);
+       thread_revert_priority_donation(lock->holder);
   }
    
   // set the current lock holder to NULL
