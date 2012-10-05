@@ -388,8 +388,8 @@ thread_set_priority (int new_priority)
   // or the highest donated priority.  If there's no donors,it has to get set.
 
    struct thread* c = thread_current();
-   c ->priority = new_priority; 
-   recompute_priority(c); 
+   c ->orig_priority = new_priority; 
+   thread_recompute_priority(c); 
    
    /*
    enum intr_level old_level = intr_disable();
@@ -407,6 +407,25 @@ thread_set_priority (int new_priority)
    
   //If the current thread no longer has the highest priority, yield to higher priority
   thread_yield_to_higher_priority_();
+}
+
+void thread_recompute_priority(struct thread *c)
+{
+   ASSERT (c != NULL);
+   enum intr_level old_level = intr_disable();
+
+   c->priority = c->orig_priority;
+
+   if (!list_empty(&c->donating_threads_list)) 
+    {
+        struct thread *max = list_entry(list_max (&c->donating_threads_list, thread_lower_priority, NULL), struct thread, donating_threads_elem);
+        if (max->priority > c->priority)
+        {
+           c->priority =  max->priority;
+        }
+    }
+  
+  intr_set_level(old_level);
 }
 
 /* Returns the current thread's priority. */
@@ -437,13 +456,14 @@ thread_donate_priority(struct thread *donor)
    ASSERT (donor != NULL);
    ASSERT (donor->acquire_lock != NULL);
 
-   struct thread * h = donor->acquire_lock->holder;
+   struct thread * h = donor->donee;
+   ASSERT (donor->donee !=NULL);
 
    //if the acquiring thread has a greater priority than the lock-holder's,
     if (donor->priority > h->priority )
     {
        h->priority = donor->priority;
-       list_push_back (&h->donating_threads_list, &h->donating_threads_elem);
+       list_push_back (&h->donating_threads_list, &donor->donating_threads_elem);
 
        bool found = false;
        struct list_elem *e;
@@ -569,7 +589,6 @@ void recompute_priority(struct thread *c)
     }
     intr_set_level(old_level);
 }
-
 
 //==========================================================================
 

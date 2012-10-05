@@ -132,6 +132,7 @@ void thread_revert_priority_donation(struct thread *loser);  // adding a recursi
 bool compare_donating_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED); // if sorting list DMC 10.3
 bool is_precedent(struct lock * l, struct thread * t) ;
 void recompute_priority(struct thread *c); //E&H: 10.4.2012 added recompute_priority
+void thread_recompute_priority(struct thread *c); // offline version - DMC
 ///////////////////////
 
 
