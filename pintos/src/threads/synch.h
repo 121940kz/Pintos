@@ -32,6 +32,8 @@ bool lock_try_acquire (struct lock *);
 void lock_release (struct lock *);
 bool lock_held_by_current_thread (const struct lock *);
 
+void release_donators(struct thread *t, struct lock *l); //This removes all elements who were only there for lock l from thread t's donating_threads_list
+
 /* Condition variable. */
 struct condition 
   {

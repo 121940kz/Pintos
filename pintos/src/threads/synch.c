@@ -121,9 +121,7 @@ sema_up (struct semaphore *sema)
       t = list_entry(list_max(&sema->waiters, thread_lower_priority, NULL), struct thread, elem);
       list_remove(list_max(&sema->waiters, thread_lower_priority, NULL));
       thread_unblock(t);
- 
-      //    thread_unblock (list_entry (list_pop_front (&sema->waiters),
-      //                         struct thread, elem));
+
 
   }
   sema->value++;
@@ -233,7 +231,7 @@ lock_acquire (struct lock *lock)
 
     // when done, reset my acquire lock field to NULL)
     cur->acquire_lock = NULL;
-    cur->donee = NULL;   //DMC 10.5.12
+    //cur->donee = NULL;   //DMC 10.5.12
   }
 }
 
@@ -286,6 +284,7 @@ lock_release (struct lock *lock)
   
   if (lock->holder->priority != lock->holder->orig_priority)  // donation has happened
   {
+	//release_donators(&lock->holder, &lock);
        thread_revert_priority_donation(lock->holder);
   }
    
@@ -293,6 +292,29 @@ lock_release (struct lock *lock)
   lock->holder = NULL;           // original code
   sema_up (&lock->semaphore);    // original code
 }
+
+void
+release_donators(struct thread *t, struct lock *l)
+{
+	struct list_elem *e;
+	if(!list_empty(&t->donating_threads_list))
+	{
+		for(e = list_begin(&t->donating_threads_list); e!= list_end(&t->donating_threads_list); e = list_next(e))
+		{
+			struct thread *temp2 = list_entry(e, struct thread, donating_threads_elem);
+			if(&temp2->acquire_lock == &l)
+			{
+				list_remove(&temp2->donating_threads_elem);
+				e = list_front(&t->donating_threads_list);
+			}
+
+		}
+
+	}
+
+
+}
+
 
 /* Returns true if the current thread holds LOCK, false
    otherwise.  (Note that testing whether some other thread holds

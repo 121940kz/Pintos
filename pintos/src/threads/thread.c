@@ -389,22 +389,10 @@ thread_set_priority (int new_priority)
 
    struct thread* c = thread_current();
    c ->priority = new_priority; 
-   recompute_priority(c); 
-   
-   /*
-   enum intr_level old_level = intr_disable();
-   c->priority = new_priority;
-   if (!list_empty(&c->donating_threads_list)) {
-     struct thread *t = list_entry(list_max(&c->donating_threads_list, compare_donating_threads_by_priority, NULL), struct thread, donating_threads_elem);
-     if (t->priority > new_priority) {
-         c->priority = t->priority;
-     }
-  }
-  
-  intr_set_level(old_level);
-  */
+   thread_recompute_priority(c); 
+
   c->orig_priority = new_priority; // update the original priority
-   
+
   //If the current thread no longer has the highest priority, yield to higher priority
   thread_yield_to_higher_priority_();
 }
@@ -443,29 +431,15 @@ thread_donate_priority(struct thread *donor)
     if (donor->priority > h->priority )
     {
        h->priority = donor->priority;
-       list_push_back (&h->donating_threads_list, &h->donating_threads_elem);
+	enum intr_level old_level = intr_disable();
 
-       bool found = false;
-       struct list_elem *e;
+       list_push_back (&h->donating_threads_list, &donor->donating_threads_elem);
 
-       //if the acquiring thread's acquire-lock-holder is on the ready list
-       for (e = list_begin (&ready_list); e != list_end (&ready_list); e = list_next (e))
-       {
-           struct thread *t = list_entry (e, struct thread, elem);
-           if (t != NULL) {
-                 if (t == h)  { found = true;  }
-           }
-       } 
+	intr_set_level(old_level);
 
-       if (found){ 
-       
-          //take it off the prioritized list of threads 
-    	  list_remove(&h->elem);
-
-          //And reinsert it with the new higher priority.
-          list_push_back (&ready_list, &h->elem);
-
-        }
+	thread_recompute_priority(donor);
+	thread_yield_to_higher_priority_();
+	bool found = false;
 
         //if the acquiring thread's acquire-lock-holder also has an 
         //acquire-lock-holder, then recursively call the donate priority
@@ -489,34 +463,21 @@ thread_revert_priority_donation(struct thread *loser)
    ASSERT (loser != NULL);
    // loser->acquire_lock is the lock I'm in the process of releasing (along with any priority donated along with it)
    // if this thread has no other options (does anyone else need me?)
-     if (list_empty(&loser->precedent_lock_list)){ 
-
-      // just reset to original 
+     if (list_empty(&loser->donating_threads_list)){ 
       loser-> priority = loser->orig_priority;
-      return;
+      loser-> donee = NULL;
+      thread_recompute_priority(loser);
     }
-   
-    // at least one thread is blocked by this lock and has made a priority donation - I want to get the highest priority I can
-    enum intr_level old_level = intr_disable();
-    loser->priority = loser->orig_priority; // This is temporary. I want to release the lock and its priority and get my remaining highest priority donation.
-    
-     // struct list_elem *e;  // second choice - also doesn't work
-     // for (e = list_begin (&loser->donating_threads_list); e != list_end (&loser->donating_threads_list);
-     //      e = list_next (e))
-      //  {
-     //     struct thread *t = list_entry (e, struct thread, donating_threads_elem);
-          
-     //   }
-
-     // first choice - but doesn't work
-     //struct thread *t = list_entry(list_max(&loser->donating_threads_list, compare_donating_threads_by_priority, NULL), struct thread, donating_threads_elem);
-     //  if (t->priority > loser->priority) {
-          //loser->priority = t->priority;
-     //}
-  
-    intr_set_level(old_level);
-   
+    else
+    {
+    	// at least one thread is blocked by this lock and has made a priority donation - I want to get the highest priority I can
+    	enum intr_level old_level = intr_disable();
+    	loser->priority = loser->orig_priority;
+    	intr_set_level(old_level);
+    }
 }
+
+
 bool 
 is_precedent(struct lock * l, struct thread * t) 
 { 
@@ -532,20 +493,13 @@ is_precedent(struct lock * l, struct thread * t)
        }
 }
 
-bool
-compare_donating_threads_by_priority(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED)
-{
-    const struct thread *a = list_entry(a_, struct thread, donating_threads_elem);
-	const struct thread *b = list_entry(b_, struct thread, donating_threads_elem);
-	return a->priority < b->priority; 
-}
 
-void recompute_priority(struct thread *c)
+void thread_recompute_priority(struct thread *c)
 {
-    int old_priority = c->priority;//E&H: 10.4.2012 We decided to save the "old" value of priority
-    enum intr_level old_level = intr_disable();
+	ASSERT(c!=NULL);
+	enum intr_level old_level = intr_disable();
 
-    //check if donor list is empty 
+    	int old_priority = c->priority;//E&H: 10.4.2012 We decided to save the "old" value of priority
 
        //Find maximum in donation list of donors, donated lower priority compare by thread blah blah blah
        //if donated priority of thread is greater than default prioirty, otherise donation is defulat priority 
@@ -553,17 +507,16 @@ void recompute_priority(struct thread *c)
        //then do a recursive call 
     if (!list_empty(&c->donating_threads_list)) //Check if donor list is empty
     {
-        c->priority = list_size(&c->donating_threads_list); //wasssuuuuuup
-        struct thread *t = list_max(&c->donating_threads_list, compare_donating_threads_by_priority, NULL);
+        struct thread *t = list_entry(list_max(&c->donating_threads_list, thread_lower_priority, NULL), struct thread, donating_threads_elem);
             //, struct thread, donating_threads_elem));
         if (t->priority > c->priority)
         {
            c->priority = t->priority;
         }
         
-        if (c->priority > old_priority)//If c priority is greater than old priority then do a recursive call 
+        if (c->priority > old_priority && c->donee != NULL)//If c priority is greater than old priority then do a recursive call 
         {
-            recompute_priority(c);
+            thread_recompute_priority(c);
         }
         
     }
