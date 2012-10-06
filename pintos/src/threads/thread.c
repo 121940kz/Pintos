@@ -431,31 +431,26 @@ thread_donate_priority(struct thread *donor)
     if (donor->priority > h->priority )
     {
        h->priority = donor->priority;
-	enum intr_level old_level = intr_disable();
+       struct lock d;       
+       lock_init(&d);       
+       lock_acquire(&d);
 
        list_push_back (&h->donating_threads_list, &donor->donating_threads_elem);
 
-	intr_set_level(old_level);
-
-	thread_recompute_priority(donor);
-	thread_yield_to_higher_priority_();
-	bool found = false;
-
+	thread_recompute_priorityr(donor);
+	
         //if the acquiring thread's acquire-lock-holder also has an 
         //acquire-lock-holder, then recursively call the donate priority
         //function with this acquire-lock-holder. 
         if (h->acquire_lock != NULL) {
              thread_donate_priority(h);
         }
+        lock_release(&d);
+        thread_yield_to_higher_priority_();
      }
 }
 /* "Thread Revert Priority Donation" gets called when a thread releases a lock 
-   and had benefited from priority donation.  The thread that is losing the lock
-   will not be a contributor anymore. Only other threads still needing that lock
-   can donate priority. If no one else cares (or has a higher priority) the 
-   new lock holder's priority will be their original priority.  If at least one 
-   other contributes, it should be the highest of all the remaining donors. 
-   - 10.3.12 - DMC
+   and had benefited from priority donation.  
 */
 void 
 thread_revert_priority_donation(struct thread *loser)
@@ -466,7 +461,7 @@ thread_revert_priority_donation(struct thread *loser)
      if (list_empty(&loser->donating_threads_list)){ 
       loser-> priority = loser->orig_priority;
       loser-> donee = NULL;
-      thread_recompute_priority(loser);
+      thread_recompute_priorityr(loser);
     }
     else
     {
@@ -522,6 +517,27 @@ void thread_recompute_priority(struct thread *c)
     }
     intr_set_level(old_level);
 }
+void thread_recompute_priorityr(struct thread *c)
+{
+  ASSERT (c != NULL);   
+  if (c->donee == NULL){ return;}   
+     enum intr_level old_level = intr_disable();
+
+     c->priority = c->orig_priority;   
+     if (!list_empty(&c->donating_threads_list))     {        
+         struct thread *max = list_entry(list_max (&c->donating_threads_list, thread_lower_priority, NULL), struct thread, donating_threads_elem);        
+     if (max->priority > c->priority)        
+     {           
+         c->priority =  max->priority;        
+     }        
+     if(c->priority > c->orig_priority )                 
+     {                          
+          thread_recompute_priorityr(c->donee);                
+     }    
+   }     
+   intr_set_level(old_level);
+}
+
 
 
 //==========================================================================
