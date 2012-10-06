@@ -467,11 +467,37 @@ thread_revert_priority_donation(struct thread *loser)
     {
     	// at least one thread is blocked by this lock and has made a priority donation - I want to get the highest priority I can
     	enum intr_level old_level = intr_disable();
-    	loser->priority = loser->orig_priority;
+   	loser->priority = loser->orig_priority;
     	intr_set_level(old_level);
     }
 }
 
+thread_revert_priority_donation2(struct thread *donor)
+{
+     ASSERT (donor!= NULL);   
+     if (donor->donee == NULL) {       
+          return;    
+     }
+     struct thread * t = donor->donee; 
+     struct lock *l = donor->acquire_lock;  
+     struct list_elem *e;
+     
+     enum intr_level old_level = intr_disable();
+
+     if(!list_empty(&t->donating_threads_list))
+     {
+	for(e = list_begin(&t->donating_threads_list); e!= list_end(&t->donating_threads_list); e = list_next(e))
+		{
+			struct thread *temp2 = list_entry(e, struct thread, donating_threads_elem);
+			if(&temp2->acquire_lock == &l)
+			{
+				list_remove(&temp2->donating_threads_elem);
+				e = list_front(&t->donating_threads_list);
+			}
+		}
+	}
+    	intr_set_level(old_level);
+}
 
 bool 
 is_precedent(struct lock * l, struct thread * t) 
@@ -517,6 +543,9 @@ void thread_recompute_priority(struct thread *c)
     }
     intr_set_level(old_level);
 }
+
+// recursive call to go down the list of donees - DMC
+
 void thread_recompute_priorityr(struct thread *c)
 {
   ASSERT (c != NULL);   

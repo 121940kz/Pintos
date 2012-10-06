@@ -285,7 +285,8 @@ lock_release (struct lock *lock)
   if (lock->holder->priority != lock->holder->orig_priority)  // donation has happened
   {
 	//release_donators(&lock->holder, &lock);
-       thread_revert_priority_donation(lock->holder);
+       //thread_revert_priority_donation2(lock->holder); // revert the donations
+       thread_revert_priority_donation(lock->holder);  // recompute
   }
    
   // set the current lock holder to NULL
