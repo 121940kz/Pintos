@@ -217,23 +217,20 @@ lock_acquire (struct lock *lock)
 
   struct thread* cur = thread_current ();
 
-  if (!lock_try_acquire(lock))  // while waiting to be successful
+  if (!lock_try_acquire(lock)) 
    {
-    cur->acquire_lock = lock;  // encapsulate everything in the thread
-    cur->donee = lock->holder;   // DMC 10.5.12 
-    ASSERT(cur->donee != NULL);  // DMC 10.5.12
-
+    cur->acquire_lock = lock;  
+    cur->donee = lock->holder; 
+    ASSERT(cur->donee != NULL);
+ 
     thread_donate_priority(cur);  // will only donate if there's a gain
-  
-    // add to list of locks for this thread
-    list_push_back (&cur->precedent_lock_list, &cur->precedent_lock_elem);
  
     sema_down (&lock->semaphore);   // original code
     lock->holder = cur;             // mostly original code
 
     // when done, reset my acquire lock field to NULL)
     cur->acquire_lock = NULL;
-    cur->donee = NULL;   //DMC 10.5.12
+    cur->donee = NULL;  
   }
 }
 
@@ -254,10 +251,6 @@ lock_try_acquire (struct lock *lock)
   success = sema_try_down (&lock->semaphore);
   if (success) {
     lock->holder = thread_current ();
-  
-    // add to list of locks for this thread 
-    list_push_back (&lock->holder->precedent_lock_list, &lock->holder->precedent_lock_elem);
-  
   }
   return success;
 }
@@ -280,18 +273,21 @@ lock_release (struct lock *lock)
   // If the thread that had the lock had received a priority donation, 
   // it can now revert back to the original priority (or a donated priority) - 
   // and highest priority thread waiting on this lock will be free to acquire it.
- 
-  // remove this lock from the releasing thread's list first
-   list_remove (&lock->holder->precedent_lock_elem);
-  
-  if (lock->holder->priority != lock->holder->orig_priority)  // donation has happened
+
+ enum intr_level old_level= intr_disable ();
+
+    
+  if (lock->holder->priority != lock->holder->orig_priority)  
   {
-       thread_revert_priority_donation(lock->holder);
+      thread_revert_priority_donation(lock->holder);
+      //thread_recompute_priority(lock->holder);
+ 
   }
-   
+   intr_set_level(old_level);
   // set the current lock holder to NULL
   lock->holder = NULL;           // original code
   sema_up (&lock->semaphore);    // original code
+
 }
 
 /* Returns true if the current thread holds LOCK, false

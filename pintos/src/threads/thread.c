@@ -388,8 +388,15 @@ thread_set_priority (int new_priority)
   // or the highest donated priority.  If there's no donors,it has to get set.
 
    struct thread* c = thread_current();
+
+   struct lock s;
+   lock_init(&s);
+   lock_acquire(&s);
+
    c ->orig_priority = new_priority; 
+  
    thread_recompute_priority(c); 
+   lock_release(&s);
    
    /*
    enum intr_level old_level = intr_disable();
@@ -403,7 +410,7 @@ thread_set_priority (int new_priority)
   
   intr_set_level(old_level);
   */
-  c->orig_priority = new_priority; // update the original priority
+ // c->orig_priority = new_priority; // update the original priority
    
   //If the current thread no longer has the highest priority, yield to higher priority
   thread_yield_to_higher_priority_();
@@ -412,8 +419,12 @@ thread_set_priority (int new_priority)
 void thread_recompute_priority(struct thread *c)
 {
    ASSERT (c != NULL);
-   enum intr_level old_level = intr_disable();
+   if (c->donee == NULL){ return;}
 
+   struct lock r;
+   lock_init(&r);
+   lock_acquire(&r);
+  
    c->priority = c->orig_priority;
 
    if (!list_empty(&c->donating_threads_list)) 
@@ -423,9 +434,13 @@ void thread_recompute_priority(struct thread *c)
         {
            c->priority =  max->priority;
         }
+        if(c->priority > c->orig_priority )         
+        {             
+             thread_recompute_priority(c->donee);        
+        }
     }
   
-  intr_set_level(old_level);
+   lock_release(&r);
 }
 
 /* Returns the current thread's priority. */
@@ -463,80 +478,40 @@ thread_donate_priority(struct thread *donor)
     if (donor->priority > h->priority )
     {
        h->priority = donor->priority;
+
+       struct lock d;
+       lock_init(&d);
+       lock_acquire(&d);
+
        list_push_back (&h->donating_threads_list, &donor->donating_threads_elem);
 
-       bool found = false;
-       struct list_elem *e;
-
-       //if the acquiring thread's acquire-lock-holder is on the ready list
-       for (e = list_begin (&ready_list); e != list_end (&ready_list); e = list_next (e))
-       {
-           struct thread *t = list_entry (e, struct thread, elem);
-           if (t != NULL) {
-                 if (t == h)  { found = true;  }
-           }
-       } 
-
-       if (found){ 
-       
-          //take it off the prioritized list of threads 
-    	  list_remove(&h->elem);
-
-          //And reinsert it with the new higher priority.
-          list_push_back (&ready_list, &h->elem);
-
-        }
-
-        //if the acquiring thread's acquire-lock-holder also has an 
-        //acquire-lock-holder, then recursively call the donate priority
-        //function with this acquire-lock-holder. 
-        if (h->acquire_lock != NULL) {
+        if (h->donee != NULL) {
              thread_donate_priority(h);
         }
+      lock_release(&d);
      }
 }
 /* "Thread Revert Priority Donation" gets called when a thread releases a lock 
-   and had benefited from priority donation.  The thread that is losing the lock
-   will not be a contributor anymore. Only other threads still needing that lock
-   can donate priority. If no one else cares (or has a higher priority) the 
-   new lock holder's priority will be their original priority.  If at least one 
-   other contributes, it should be the highest of all the remaining donors. 
-   - 10.3.12 - DMC
+   and had benefited from priority donation.  
 */
 void 
-thread_revert_priority_donation(struct thread *loser)
+thread_revert_priority_donation(struct thread *c)
 {
-   ASSERT (loser != NULL);
-   // loser->acquire_lock is the lock I'm in the process of releasing (along with any priority donated along with it)
-   // if this thread has no other options (does anyone else need me?)
-     if (list_empty(&loser->precedent_lock_list)){ 
-
-      // just reset to original 
-      loser-> priority = loser->orig_priority;
-      return;
+    ASSERT (c != NULL);
+    if (c->donee == NULL) {
+       return;
     }
-   
-    // at least one thread is blocked by this lock and has made a priority donation - I want to get the highest priority I can
-    enum intr_level old_level = intr_disable();
-    loser->priority = loser->orig_priority; // This is temporary. I want to release the lock and its priority and get my remaining highest priority donation.
-    
-     // struct list_elem *e;  // second choice - also doesn't work
-     // for (e = list_begin (&loser->donating_threads_list); e != list_end (&loser->donating_threads_list);
-     //      e = list_next (e))
-      //  {
-     //     struct thread *t = list_entry (e, struct thread, donating_threads_elem);
-          
-     //   }
 
-     // first choice - but doesn't work
-     //struct thread *t = list_entry(list_max(&loser->donating_threads_list, compare_donating_threads_by_priority, NULL), struct thread, donating_threads_elem);
-     //  if (t->priority > loser->priority) {
-          //loser->priority = t->priority;
-     //}
-  
-    intr_set_level(old_level);
-   
+   // struct lock v;
+  //  lock_init(&v);
+  //  lock_acquire(&v);
+
+ //   list_remove(&c->donee->donating_threads_elem);
+    //thread_revert_priority_donation(c->donee);
+ //   lock_release(&v);
+
 }
+
 bool 
 is_precedent(struct lock * l, struct thread * t) 
 { 
